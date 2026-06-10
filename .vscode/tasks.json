@@ -1,0 +1,128 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Debug x64",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "msbuild",
+                "CTCS0-Ats.csproj",
+                "/p:Configuration=Debug",
+                "/p:Platform=x64"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "silent",
+                "clear": true
+            }
+        },
+        {
+            "label": "Build Debug x86",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "msbuild",
+                "CTCS0-Ats.csproj",
+                "/p:Configuration=Debug",
+                "/p:Platform=x86"
+            ],
+            "group": "build",
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "silent",
+                "clear": true
+            }
+        },
+        {
+            "label": "Build Release x64",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "msbuild",
+                "CTCS0-Ats.csproj",
+                "/p:Configuration=Release",
+                "/p:Platform=x64"
+            ],
+            "group": "build",
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "silent",
+                "clear": true
+            }
+        },
+        {
+            "label": "Build Release x86",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "msbuild",
+                "CTCS0-Ats.csproj",
+                "/p:Configuration=Release",
+                "/p:Platform=x86"
+            ],
+            "group": "build",
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "silent",
+                "clear": true
+            }
+        },
+        {
+            "label": "Build All (Debug x64 + x86)",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "msbuild",
+                "CTCS0-Ats.csproj",
+                "/p:Configuration=Debug",
+                "/p:Platform=x64"
+            ],
+            "dependsOn": [
+                "Build Debug x64",
+                "Build Debug x86"
+            ],
+            "dependsOrder": "sequence",
+            "group": "build",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Rebuild Debug x64",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "msbuild",
+                "CTCS0-Ats.csproj",
+                "/t:Rebuild",
+                "/p:Configuration=Debug",
+                "/p:Platform=x64"
+            ],
+            "group": "build",
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "silent",
+                "clear": true
+            }
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "msbuild",
+                "CTCS0-Ats.csproj",
+                "/t:Clean"
+            ],
+            "group": "build",
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "silent",
+                "clear": true
+            }
+        }
+    ]
+}
