@@ -10,7 +10,7 @@ namespace CTCS0_Ats
         [DllExport(CallingConvention.StdCall)]
         public static void Load()
         {
-            DebugDumper.WriteLine("CTCS-0插件已加载");
+            Tool.DebugWriteLine("CTCS-0插件已加载");
             DMI.Load();
         }
     }

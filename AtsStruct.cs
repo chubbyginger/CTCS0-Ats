@@ -203,22 +203,6 @@ namespace CTCS0_Ats
         }
 
         /// <summary>
-        /// Called every frame
-        /// </summary>
-        /// <param name="vehicleState">Current state of vehicle.</param>
-        /// <param name="panel">Current state of panel.</param>
-        /// <param name="sound">Current state of sound.</param>
-        /// <returns>Driving operations of vehicle.</returns>
-        [DllExport(CallingConvention.StdCall)]
-        public static AtsHandles Elapse(AtsVehicleState vehicleState, IntPtr panel, IntPtr sound)
-        {
-            var panelArray = new AtsIoArray(panel);
-            var soundArray = new AtsIoArray(sound);
-
-            return new AtsHandles() { Power = userPowerPosition, Brake = userBrakePosition, ConstantSpeed = AtsCscInstruction.Continue, Reverser = userReverserPosition };
-        }
-
-        /// <summary>
         /// Called when the power is changed
         /// </summary>
         /// <param name="handlePosition">Position of traction control handle.</param>

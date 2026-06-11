@@ -18,7 +18,7 @@ namespace CTCS0_Ats
                     Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
                     "."
                 ));
-                var fileName = "Zbx1425.DXDynamicTexture.dll";
+                var fileName = "Zbx1425.DXDynamicTexture-net48.dll";
                 return Assembly.LoadFile(Path.Combine(libPath, fileName));
             }
             return null;
