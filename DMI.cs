@@ -120,6 +120,14 @@ namespace CTCS0_Ats
             }
         }
 
+        private static void DrawMonospaceNumber(int fullNumber, int digits, Bitmap digitBitmap, Bitmap nullBitmap, int x, int y, int w, int h)
+        {
+            for (int d = 0; d < digits; d++)
+            {
+                DrawOneDigit(fullNumber, d, digitBitmap, nullBitmap, x - d * w, y, h);
+            }
+        }
+
         private static void DrawStatus(AtsMain.AtsVehicleState state)
         {
             int absSpeed = Math.Abs((int)Math.Ceiling(state.Speed));
@@ -166,24 +174,15 @@ namespace CTCS0_Ats
             bitmapGDI.DrawImage(EMU_StatusWindowBitmap, 561, 81);
 
             // 电流
-            int absCurrent = Math.Abs((int)state.Current);
-            DrawOneDigit(absCurrent, 0, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, 86, 17);
-            DrawOneDigit(absCurrent, 1, statusWhiteDigitBitmap, statusNullDigitBitmap, 713, 86, 17);
-            DrawOneDigit(absCurrent, 2, statusWhiteDigitBitmap, statusNullDigitBitmap, 702, 86, 17);
-            DrawOneDigit(absCurrent, 3, statusWhiteDigitBitmap, statusNullDigitBitmap, 691, 86, 17);
+            DrawMonospaceNumber(Math.Abs((int)state.Current), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, 86, 11, 17);
 
             // 制动缸压力
-            int bcPressure = (int)(state.BcPressure);
-            DrawOneDigit(bcPressure, 0, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, bcPressureY, 17);
-            DrawOneDigit(bcPressure, 1, statusWhiteDigitBitmap, statusNullDigitBitmap, 713, bcPressureY, 17);
-            DrawOneDigit(bcPressure, 2, statusWhiteDigitBitmap, statusNullDigitBitmap, 702, bcPressureY, 17);
-            DrawOneDigit(bcPressure, 3, statusWhiteDigitBitmap, statusNullDigitBitmap, 691, bcPressureY, 17);
+            DrawMonospaceNumber((int)(state.BcPressure), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, bcPressureY, 11, 17);
 
             // 换向器
             bitmapGDI.DrawImage(reverserBitmap, 607, engineStatusY, (1 - AtsMain.userReverserPosition) * 23, 23);
 
             // 零位
-            // 此处逻辑将来引入卸载/制动控制后需要更改。
             if (AtsMain.actualPowerPosition == 0)
             {
                 bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 0, 23);
