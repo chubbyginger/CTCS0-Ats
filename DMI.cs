@@ -161,12 +161,15 @@ namespace CTCS0_Ats
 
             // 绘制物理状态
             int bcPressureY = 109;
-            int engineStatusY = 135;
+            int engineStatusY = 134;
+            int threeSpeedY = 189;
+
             switch (AtsMain.vehicleType)
             {
                 case 3:
                     bcPressureY = 109;
                     engineStatusY = 134;
+                    threeSpeedY = 189;
                     break;
                 default:
                     break;
@@ -214,8 +217,10 @@ namespace CTCS0_Ats
             }
 
             // 三通道速度
-
-            
+            int absSpeed3 = Math.Abs((int)Math.Ceiling(state.Speed));
+            DrawMonospaceNumber(absSpeed3, 3, statusGreenDigitBitmap, statusNullDigitBitmap, 664, threeSpeedY, 11, 17);
+            DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 697, threeSpeedY, 11, 17);
+            DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 730, threeSpeedY, 11, 17);
 
             // 关闭GDIHelper
             bitmapGDI.EndGDI();
