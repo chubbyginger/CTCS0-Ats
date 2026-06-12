@@ -15,6 +15,10 @@ namespace CTCS0_Ats
         private static Bitmap baseBitmap;
         private static Bitmap currentSpeedDigitBitmap, limitSpeedDigitBitmap, targetDistanceDigitBitmap, nullDigitBigBitmap;
         private static Bitmap dateDigitBitmap, timeDigitBitmap;
+        // DL_DMU: 内燃机车、内燃动车组，自空制动机。DMU_Straight：内燃动车组直通制动机。EL：电力机车自空制动机。EMU：电动车组直通制动机。
+        private static Bitmap DL_DMU_StatusWindowBitmap, DMU_StraightStatusWindowBitmap, EL_StatusWindowBitmap, EMU_StatusWindowBitmap;
+        private static Bitmap statusWhiteDigitBitmap, statusGreenDigitBitmap, statusGreyDigitBitmap, statusNullDigitBitmap;
+        private static Bitmap reverserBitmap, notchZeroBitmap, tractionBrakeBitmap;
 
         /// <summary>
         /// GDIHelper封装，适用于整个DMI
@@ -70,13 +74,24 @@ namespace CTCS0_Ats
                 nullDigitBigBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/null_digits.png"));
                 dateDigitBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/date_digits.png"));
                 timeDigitBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/time_digits.png"));
+                DL_DMU_StatusWindowBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/status_window_dl_dmu.png"));
+                DMU_StraightStatusWindowBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/status_window_dmu_straightbrake.png"));
+                EL_StatusWindowBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/status_window_el.png"));
+                EMU_StatusWindowBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/status_window_emu.png"));
+                statusWhiteDigitBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/status_white_digits.png"));
+                statusGreenDigitBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/status_green_digits.png"));
+                statusGreyDigitBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/status_grey_digits.png"));
+                statusNullDigitBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/status_null_digits.png"));
+                reverserBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/reverser.png"));
+                notchZeroBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/notchzero.png"));
+                tractionBrakeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/tractionbrake.png"));
             }
             catch (Exception ex)
             {
 
                 Tool.DebugWriteLine("DMI位图资源加载阶段错误：" + ex.ToString());
             }
-            
+
         }
 
         private static void DrawBase()
@@ -86,59 +101,124 @@ namespace CTCS0_Ats
             bitmapGDI.EndGDI();
         }
 
+        private static void DrawOneDigit(int fullNumber, int digit, Bitmap digitBitmap, Bitmap nullBitmap, int x, int y, int h)
+        {
+            if (digit == 0)
+            {
+                bitmapGDI.DrawImage(digitBitmap, x, y, Tool.D(fullNumber, 0, true) * h, h);
+            }
+            else
+            {
+                if (Tool.D(fullNumber, digit, false) == 10)
+                {
+                    bitmapGDI.DrawImage(nullBitmap, x, y);
+                }
+                else
+                {
+                    bitmapGDI.DrawImage(digitBitmap, x, y, Tool.D(fullNumber, digit, false) * h, h);
+                }
+            }
+        }
+
         private static void DrawStatus(AtsMain.AtsVehicleState state)
         {
-            int[] speedDigits = Tool.SplitDigits3(Math.Abs((int)state.Speed));
+            int absSpeed = Math.Abs((int)Math.Ceiling(state.Speed));
             bitmapGDI.BeginGDI();
             // 当前速度绘制
-            if (speedDigits[0] != 0)
-            {
-                bitmapGDI.DrawImage(currentSpeedDigitBitmap, 129, 14, speedDigits[0] * 51, 51);
-            }
-            else
-            {
-                bitmapGDI.DrawImage(nullDigitBigBitmap, 129, 14);
-            }
-            if (speedDigits[1] != 0 || speedDigits[0] != 0)
-            {
-                bitmapGDI.DrawImage(currentSpeedDigitBitmap, 158, 14, speedDigits[1] * 51, 51);
-            }
-            else
-            {
-                bitmapGDI.DrawImage(nullDigitBigBitmap, 158, 14);
-            }
-            bitmapGDI.DrawImage(currentSpeedDigitBitmap, 187, 14, speedDigits[2] * 51, 51);
+            DrawOneDigit(absSpeed, 2, currentSpeedDigitBitmap, nullDigitBigBitmap, 129, 14, 51);
+            DrawOneDigit(absSpeed, 1, currentSpeedDigitBitmap, nullDigitBigBitmap, 158, 14, 51);
+            DrawOneDigit(absSpeed, 0, currentSpeedDigitBitmap, nullDigitBigBitmap, 187, 14, 51);
 
             // 绘制日期（实际日期）
             DateTime now = DateTime.Now;
-            int[] yearDigits = Tool.SplitDigits4(now.Year);
-            int[] monthDigits = Tool.SplitDigits2(now.Month);
-            int[] dayDigits = Tool.SplitDigits2(now.Day);
-            bitmapGDI.DrawImage(dateDigitBitmap, 691, 13, yearDigits[0] * 17, 17);
-            bitmapGDI.DrawImage(dateDigitBitmap, 701, 13, yearDigits[1] * 17, 17);
-            bitmapGDI.DrawImage(dateDigitBitmap, 711, 13, yearDigits[2] * 17, 17);
-            bitmapGDI.DrawImage(dateDigitBitmap, 721, 13, yearDigits[3] * 17, 17);
-            bitmapGDI.DrawImage(dateDigitBitmap, 742, 13, monthDigits[0] * 17, 17);
-            bitmapGDI.DrawImage(dateDigitBitmap, 752, 13, monthDigits[1] * 17, 17);
-            bitmapGDI.DrawImage(dateDigitBitmap, 772, 13, dayDigits[0] * 17, 17);
-            bitmapGDI.DrawImage(dateDigitBitmap, 782, 13, dayDigits[1] * 17, 17);
+            bitmapGDI.DrawImage(dateDigitBitmap, 691, 13, Tool.D(now.Year, 3, true) * 17, 17);
+            bitmapGDI.DrawImage(dateDigitBitmap, 701, 13, Tool.D(now.Year, 2, true) * 17, 17);
+            bitmapGDI.DrawImage(dateDigitBitmap, 711, 13, Tool.D(now.Year, 1, true) * 17, 17);
+            bitmapGDI.DrawImage(dateDigitBitmap, 721, 13, Tool.D(now.Year, 0, true) * 17, 17);
+            bitmapGDI.DrawImage(dateDigitBitmap, 742, 13, Tool.D(now.Month, 1, true) * 17, 17);
+            bitmapGDI.DrawImage(dateDigitBitmap, 752, 13, Tool.D(now.Month, 0, true) * 17, 17);
+            bitmapGDI.DrawImage(dateDigitBitmap, 772, 13, Tool.D(now.Day, 1, true) * 17, 17);
+            bitmapGDI.DrawImage(dateDigitBitmap, 782, 13, Tool.D(now.Day, 0, true) * 17, 17);
 
             // 绘制时间
             int sec = Convert.ToInt32(state.Time) / 1000 % 60;
             int min = Convert.ToInt32(state.Time) / 1000 / 60 % 60;
             int hrs = Convert.ToInt32(state.Time) / 1000 / 3600 % 60;
-            int[] secDigits = Tool.SplitDigits2(sec);
-            int[] minDigits = Tool.SplitDigits2(min);
-            int[] hrsDigits = Tool.SplitDigits2(hrs);
-            bitmapGDI.DrawImage(timeDigitBitmap, 693, 38, hrsDigits[0] * 25, 25);
-            bitmapGDI.DrawImage(timeDigitBitmap, 707, 38, hrsDigits[1] * 25, 25);
-            bitmapGDI.DrawImage(timeDigitBitmap, 728, 38, minDigits[0] * 25, 25);
-            bitmapGDI.DrawImage(timeDigitBitmap, 742, 38, minDigits[1] * 25, 25);
-            bitmapGDI.DrawImage(timeDigitBitmap, 763, 38, secDigits[0] * 25, 25);
-            bitmapGDI.DrawImage(timeDigitBitmap, 777, 38, secDigits[1] * 25, 25);
+            bitmapGDI.DrawImage(timeDigitBitmap, 693, 38, Tool.D(hrs, 1, true) * 25, 25);
+            bitmapGDI.DrawImage(timeDigitBitmap, 707, 38, Tool.D(hrs, 0, true) * 25, 25);
+            bitmapGDI.DrawImage(timeDigitBitmap, 728, 38, Tool.D(min, 1, true) * 25, 25);
+            bitmapGDI.DrawImage(timeDigitBitmap, 742, 38, Tool.D(min, 0, true) * 25, 25);
+            bitmapGDI.DrawImage(timeDigitBitmap, 763, 38, Tool.D(sec, 1, true) * 25, 25);
+            bitmapGDI.DrawImage(timeDigitBitmap, 777, 38, Tool.D(sec, 0, true) * 25, 25);
 
             // 绘制物理状态
+            int bcPressureY = 109;
+            int engineStatusY = 135;
+            switch (AtsMain.vehicleType)
+            {
+                case 3:
+                    bcPressureY = 109;
+                    engineStatusY = 134;
+                    break;
+                default:
+                    break;
+            }
+            bitmapGDI.DrawImage(EMU_StatusWindowBitmap, 561, 81);
 
+            // 电流
+            int absCurrent = Math.Abs((int)state.Current);
+            DrawOneDigit(absCurrent, 0, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, 86, 17);
+            DrawOneDigit(absCurrent, 1, statusWhiteDigitBitmap, statusNullDigitBitmap, 713, 86, 17);
+            DrawOneDigit(absCurrent, 2, statusWhiteDigitBitmap, statusNullDigitBitmap, 702, 86, 17);
+            DrawOneDigit(absCurrent, 3, statusWhiteDigitBitmap, statusNullDigitBitmap, 691, 86, 17);
+
+            // 制动缸压力
+            int bcPressure = (int)(state.BcPressure);
+            DrawOneDigit(bcPressure, 0, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, bcPressureY, 17);
+            DrawOneDigit(bcPressure, 1, statusWhiteDigitBitmap, statusNullDigitBitmap, 713, bcPressureY, 17);
+            DrawOneDigit(bcPressure, 2, statusWhiteDigitBitmap, statusNullDigitBitmap, 702, bcPressureY, 17);
+            DrawOneDigit(bcPressure, 3, statusWhiteDigitBitmap, statusNullDigitBitmap, 691, bcPressureY, 17);
+
+            // 换向器
+            bitmapGDI.DrawImage(reverserBitmap, 607, engineStatusY, (1 - AtsMain.userReverserPosition) * 23, 23);
+
+            // 零位
+            // 此处逻辑将来引入卸载/制动控制后需要更改。
+            if (AtsMain.actualPowerPosition == 0)
+            {
+                bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 0, 23);
+            }
+            else
+            {
+                bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 23, 23);
+            }
+
+            // 牵引/制动
+            switch (AtsMain.vehicleType)
+            {
+                case 3:
+                    if (AtsMain.actualPowerPosition > 0)
+                    {
+                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 0, 23);
+                    }
+                    else if (AtsMain.actualPowerPosition < 0 || AtsMain.actualBrakePosition > 0)
+                    {
+                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 23, 23);
+                    }
+                    else
+                    {
+                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 46, 23);
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            // 三通道速度
+
+            
+
+            // 关闭GDIHelper
             bitmapGDI.EndGDI();
         }
 

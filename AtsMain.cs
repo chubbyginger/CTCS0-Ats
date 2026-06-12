@@ -7,7 +7,10 @@ namespace CTCS0_Ats
 {
     public partial class AtsMain
     {
+        // 车辆类型：0:DL_DMU, 1:DMU_Straight, 2:EL, 3:EMU
+        public static int vehicleType = 3;
         public static int userPowerPosition, userBrakePosition, userReverserPosition;
+        public static int actualPowerPosition, actualBrakePosition;
         public static string dllParentPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
         /// <summary>
         /// Called when this plug-in is unloaded
@@ -31,7 +34,9 @@ namespace CTCS0_Ats
             var panelArray = new AtsIoArray(panel);
             var soundArray = new AtsIoArray(sound);
             DMI.Frame(vehicleState);
-            return new AtsHandles() { Power = userPowerPosition, Brake = userBrakePosition, ConstantSpeed = AtsCscInstruction.Continue, Reverser = userReverserPosition };
+            actualPowerPosition = userPowerPosition;
+            actualBrakePosition = userBrakePosition;
+            return new AtsHandles() { Power = actualPowerPosition, Brake = actualBrakePosition, ConstantSpeed = AtsCscInstruction.Continue, Reverser = userReverserPosition };
         }
     }
 }
