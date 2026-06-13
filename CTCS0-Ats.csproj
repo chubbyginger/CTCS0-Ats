@@ -93,6 +93,7 @@
   <ItemGroup>
     <Compile Include="AtsMain.cs" />
     <Compile Include="AtsStruct.cs" />
+    <Compile Include="Config.cs" />
     <Compile Include="Tool.cs" />
     <Compile Include="DMI.cs" />
     <Compile Include="DynamicTextureCall.cs" />

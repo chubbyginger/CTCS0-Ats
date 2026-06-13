@@ -25,30 +25,12 @@ namespace CTCS0_Ats
         /// </summary>
         private static GDIHelper bitmapGDI;
 
-        // 以下texture相关常量将来都需要用config模块读取
-        /// <summary>
-        /// 要被替换的纹理路径，必须是Scenarios下的相对路径
-        /// </summary>
-        private const string textureToBeReplaced = "chubbyginger/InnoSig-E531/image/DMI.png";
-        /// <summary>
-        /// 被替换纹理的宽度（必须为2的次幂）
-        /// </summary>
-        private const int replacedTextureW = 1024;
-        /// <summary>
-        /// 被替换纹理的高度（必须为2的次幂）
-        /// </summary>
-        private const int replacedTextureH = 1024;
-        /// <summary>
-        /// DMI屏幕最大帧率
-        /// </summary>
-        private const int targetFPS = 10;
-
         internal static void Load()
         {
             try
             {
                 TextureManager.Initialize();
-                tHandle = TextureManager.Register(textureToBeReplaced, 1024, 1024);
+                tHandle = TextureManager.Register(Config.TexturePath, Config.TextureWidth, Config.TextureHeight);
                 if (tHandle.IsCreated)
                 {
                     Tool.DebugWriteLine("DMI动态纹理创建成功");
@@ -62,7 +44,7 @@ namespace CTCS0_Ats
             {
                 Tool.DebugWriteLine("DMI动态纹理初始化阶段错误：" + ex.ToString());
             }
-            bitmapGDI = new GDIHelper(replacedTextureW, replacedTextureH);
+            bitmapGDI = new GDIHelper(Config.TextureWidth, Config.TextureHeight);
 
             // 加载位图资源
             try
@@ -128,6 +110,61 @@ namespace CTCS0_Ats
             }
         }
 
+        private static void DrawTrainPhysics(AtsMain.AtsVehicleState state)
+        {
+            int bcPressureY = 109;
+            int engineStatusY = 134;
+            int threeSpeedY = 189;
+
+            switch (Config.VehicleType)
+            {
+                case 3:
+                    bcPressureY = 109;
+                    engineStatusY = 134;
+                    threeSpeedY = 189;
+                    bitmapGDI.DrawImage(EMU_StatusWindowBitmap, 561, 81);
+                    // 电流
+                    DrawMonospaceNumber(Math.Abs((int)state.Current), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, 86, 11, 17);
+                    // 牵引/制动工况
+                    if (AtsMain.actualPowerPosition > 0)
+                    {
+                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 0, 23);
+                    }
+                    else if (AtsMain.actualPowerPosition < 0 || AtsMain.actualBrakePosition > 0)
+                    {
+                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 23, 23);
+                    }
+                    else
+                    {
+                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 46, 23);
+                    }
+                    break;
+                default:
+                    break;
+            }
+            // 制动缸压力
+            DrawMonospaceNumber((int)(state.BcPressure), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, bcPressureY, 11, 17);
+
+            // 换向器
+            bitmapGDI.DrawImage(reverserBitmap, 607, engineStatusY, (1 - AtsMain.userReverserPosition) * 23, 23);
+
+            // 零位
+            if (AtsMain.actualPowerPosition == 0)
+            {
+                bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 0, 23);
+            }
+            else
+            {
+                bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 23, 23);
+            }
+
+            // 三通道速度
+            int absSpeed3 = Math.Abs((int)Math.Ceiling(state.Speed));
+            DrawMonospaceNumber(absSpeed3, 3, statusGreenDigitBitmap, statusNullDigitBitmap, 664, threeSpeedY, 11, 17);
+            DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 697, threeSpeedY, 11, 17);
+            DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 730, threeSpeedY, 11, 17);
+        }
+
         private static void DrawStatus(AtsMain.AtsVehicleState state)
         {
             int absSpeed = Math.Abs((int)Math.Ceiling(state.Speed));
@@ -160,67 +197,7 @@ namespace CTCS0_Ats
             bitmapGDI.DrawImage(timeDigitBitmap, 777, 38, Tool.D(sec, 0, true) * 25, 25);
 
             // 绘制物理状态
-            int bcPressureY = 109;
-            int engineStatusY = 134;
-            int threeSpeedY = 189;
-
-            switch (AtsMain.vehicleType)
-            {
-                case 3:
-                    bcPressureY = 109;
-                    engineStatusY = 134;
-                    threeSpeedY = 189;
-                    break;
-                default:
-                    break;
-            }
-            bitmapGDI.DrawImage(EMU_StatusWindowBitmap, 561, 81);
-
-            // 电流
-            DrawMonospaceNumber(Math.Abs((int)state.Current), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, 86, 11, 17);
-
-            // 制动缸压力
-            DrawMonospaceNumber((int)(state.BcPressure), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, bcPressureY, 11, 17);
-
-            // 换向器
-            bitmapGDI.DrawImage(reverserBitmap, 607, engineStatusY, (1 - AtsMain.userReverserPosition) * 23, 23);
-
-            // 零位
-            if (AtsMain.actualPowerPosition == 0)
-            {
-                bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 0, 23);
-            }
-            else
-            {
-                bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 23, 23);
-            }
-
-            // 牵引/制动
-            switch (AtsMain.vehicleType)
-            {
-                case 3:
-                    if (AtsMain.actualPowerPosition > 0)
-                    {
-                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 0, 23);
-                    }
-                    else if (AtsMain.actualPowerPosition < 0 || AtsMain.actualBrakePosition > 0)
-                    {
-                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 23, 23);
-                    }
-                    else
-                    {
-                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 46, 23);
-                    }
-                    break;
-                default:
-                    break;
-            }
-
-            // 三通道速度
-            int absSpeed3 = Math.Abs((int)Math.Ceiling(state.Speed));
-            DrawMonospaceNumber(absSpeed3, 3, statusGreenDigitBitmap, statusNullDigitBitmap, 664, threeSpeedY, 11, 17);
-            DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 697, threeSpeedY, 11, 17);
-            DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 730, threeSpeedY, 11, 17);
+            DrawTrainPhysics(state);
 
             // 关闭GDIHelper
             bitmapGDI.EndGDI();
@@ -228,7 +205,7 @@ namespace CTCS0_Ats
 
         internal static void Frame(AtsMain.AtsVehicleState state)
         {
-            if (tHandle.HasEnoughTimePassed(targetFPS))
+            if (tHandle.HasEnoughTimePassed(Config.TargetFPS))
             {
                 DrawBase();
                 DrawStatus(state);

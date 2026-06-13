@@ -96,11 +96,11 @@ namespace CTCS0_Ats
             public double Location;    // Train Position (Z-axis) (m)
             public float Speed;        // Train Speed (km/h)
             public int Time;           // Time (ms)
-            public float BcPressure;   // Pressure of Brake Cylinder (Pa)
-            public float MrPressure;   // Pressure of MR (Pa)
-            public float ErPressure;   // Pressure of ER (Pa)
-            public float BpPressure;   // Pressure of BP (Pa)
-            public float SapPressure;  // Pressure of SAP (Pa)
+            public float BcPressure;   // Pressure of Brake Cylinder (kPa)
+            public float MrPressure;   // Pressure of MR (kPa)
+            public float ErPressure;   // Pressure of ER (kPa)
+            public float BpPressure;   // Pressure of BP (kPa)
+            public float SapPressure;  // Pressure of SAP (kPa)
             public float Current;      // Current (A)
         };
 

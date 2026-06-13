@@ -7,8 +7,6 @@ namespace CTCS0_Ats
 {
     public partial class AtsMain
     {
-        // 车辆类型：0:DL_DMU, 1:DMU_Straight, 2:EL, 3:EMU
-        public static int vehicleType = 3;
         public static int userPowerPosition, userBrakePosition, userReverserPosition;
         public static int actualPowerPosition, actualBrakePosition;
         public static string dllParentPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
