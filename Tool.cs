@@ -12,7 +12,7 @@ namespace CTCS0_Ats
             Debug.WriteLine("BVE Trainsim Plugin: " + debugText);
         }
 
-        private static int[] pow10 = new int[] { 1, 10, 100, 1000, 10000, 100000 };
+        private static readonly int[] pow10 = new int[] { 1, 10, 100, 1000, 10000, 100000 };
         internal static int D(int src, int digit, bool needEmptyDigits)
         {
             if (pow10[digit] > src && !needEmptyDigits)

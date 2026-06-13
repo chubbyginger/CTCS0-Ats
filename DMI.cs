@@ -20,6 +20,8 @@ namespace CTCS0_Ats
         private static Bitmap statusWhiteDigitBitmap, statusGreenDigitBitmap, statusGreyDigitBitmap, statusNullDigitBitmap;
         private static Bitmap reverserBitmap, notchZeroBitmap, tractionBrakeBitmap;
 
+        private static Bitmap passengerFreightBitmap;
+
         /// <summary>
         /// GDIHelper封装，适用于整个DMI
         /// </summary>
@@ -67,6 +69,7 @@ namespace CTCS0_Ats
                 reverserBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/reverser.png"));
                 notchZeroBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/notchzero.png"));
                 tractionBrakeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/tractionbrake.png"));
+                passengerFreightBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/pf.png"));
             }
             catch (Exception ex)
             {
@@ -78,9 +81,7 @@ namespace CTCS0_Ats
 
         private static void DrawBase()
         {
-            bitmapGDI.BeginGDI();
             bitmapGDI.DrawImage(baseBitmap, 0, 0);
-            bitmapGDI.EndGDI();
         }
 
         private static void DrawOneDigit(int fullNumber, int digit, Bitmap digitBitmap, Bitmap nullBitmap, int x, int y, int h)
@@ -165,10 +166,9 @@ namespace CTCS0_Ats
             DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 730, threeSpeedY, 11, 17);
         }
 
-        private static void DrawStatus(AtsMain.AtsVehicleState state)
+        private static void DrawVehicleStatus(AtsMain.AtsVehicleState state)
         {
             int absSpeed = Math.Abs((int)Math.Ceiling(state.Speed));
-            bitmapGDI.BeginGDI();
             // 当前速度绘制
             DrawOneDigit(absSpeed, 2, currentSpeedDigitBitmap, nullDigitBigBitmap, 129, 14, 51);
             DrawOneDigit(absSpeed, 1, currentSpeedDigitBitmap, nullDigitBigBitmap, 158, 14, 51);
@@ -198,17 +198,33 @@ namespace CTCS0_Ats
 
             // 绘制物理状态
             DrawTrainPhysics(state);
+        }
 
-            // 关闭GDIHelper
-            bitmapGDI.EndGDI();
+        internal static void DrawRightStatusBar()
+        {
+            switch (Config.PassengerFreight)
+            {
+                case 0:
+                    bitmapGDI.DrawImage(passengerFreightBitmap, 754, 330, 0, 24);
+                    break;
+                case 1:
+                    bitmapGDI.DrawImage(passengerFreightBitmap, 754, 330, 24, 24);
+                    break;
+                default:
+                    Tool.DebugWriteLine("客货状态是无效的");
+                    break;
+            }
         }
 
         internal static void Frame(AtsMain.AtsVehicleState state)
         {
             if (tHandle.HasEnoughTimePassed(Config.TargetFPS))
             {
+                bitmapGDI.BeginGDI();
                 DrawBase();
-                DrawStatus(state);
+                DrawVehicleStatus(state);
+                DrawRightStatusBar();
+                bitmapGDI.EndGDI();
                 tHandle.Update(bitmapGDI);
             }
         }

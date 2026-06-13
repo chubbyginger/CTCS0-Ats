@@ -99,6 +99,7 @@
     <Compile Include="DynamicTextureCall.cs" />
     <Compile Include="Load.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TrackData.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

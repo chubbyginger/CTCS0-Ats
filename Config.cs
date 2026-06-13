@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace CTCS0_Ats
 {
@@ -11,6 +10,8 @@ namespace CTCS0_Ats
         public static int TextureHeight = 1024;
         public static int TargetFPS = 10;
         public static int VehicleType = 3;
+        // 0: 客运, 1: 货运
+        public static int PassengerFreight = 0;
 
         internal static void Load()
         {
@@ -38,6 +39,7 @@ namespace CTCS0_Ats
                         case "TextureHeight": TextureHeight = int.Parse(val); break;
                         case "TargetFPS": TargetFPS = int.Parse(val); break;
                         case "VehicleType": VehicleType = int.Parse(val); break;
+                        case "PassengerFreight": PassengerFreight = int.Parse(val); break;
                     }
                 }
                 Tool.DebugWriteLine("config.ini加载完成");
