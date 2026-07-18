@@ -40,24 +40,12 @@ namespace CTCS0_Ats
         [DllExport(CallingConvention.StdCall)]
         public static void SetSignal(int signalIndex)
         {
-
+            CabSignal.DecodeSignal(signalIndex);
         }
 
-        /// <summary>
-        /// Called when the beacon data is received
-        /// </summary>
-        /// <param name="beaconData">Received data of beacon.</param>
         [DllExport(CallingConvention.StdCall)]
         public static void SetBeaconData(AtsBeaconData beaconData)
         {
-            switch (beaconData.Type)
-            {
-                case 10:
-                    CabSignal.DecodeBeacon(beaconData);
-                    break;
-                default:
-                    break;
-            }
         }
 
         /// <summary>

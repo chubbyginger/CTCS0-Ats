@@ -1,4 +1,6 @@
-﻿namespace CTCS0_Ats
+﻿using System;
+
+namespace CTCS0_Ats
 {
     internal class CabSignal
     {
@@ -28,27 +30,18 @@
         /// </summary>
         internal static CabSignalCode currentSignal;
 
-        /// <summary>
-        /// 通过Beacon解码当前机车信号
-        /// </summary>
-        /// <param name="beaconData"></param>
-        internal static void DecodeBeacon(AtsMain.AtsBeaconData beaconData)
+        internal static void DecodeSignal(int signalIndex)
         {
-            Tool.DebugWriteLine(string.Format("Beacon接收: Type={0}, Signal={1}, Distance={2}, Optional={3}", beaconData.Type, beaconData.Signal, beaconData.Distance, beaconData.Optional));
-            if (beaconData.Signal >= 0 && beaconData.Signal <= 14 && beaconData.Signal != 1)
+            Tool.DebugWriteLine("SetSignal接收: signalIndex=" + signalIndex);
+            if (Enum.IsDefined(typeof(CabSignalCode), signalIndex))
             {
-                currentSignal = (CabSignalCode)beaconData.Signal;
+                currentSignal = (CabSignalCode)signalIndex;
             }
             else
             {
                 currentSignal = CabSignalCode.B;
             }
             Tool.DebugWriteLine("机车信号解码: " + currentSignal.ToString());
-        }
-
-        internal static void DecodeSignal()
-        {
-
         }
     }
 }
