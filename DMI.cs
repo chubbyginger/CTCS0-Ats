@@ -7,6 +7,15 @@ namespace CTCS0_Ats
     internal class DMI
     {
         /// <summary>
+        /// 帧计数器，用于实现闪烁效果
+        /// </summary>
+        public static int frameCounter;
+        /// <summary>
+        /// DMI机车信号闪烁用的，
+        /// </summary>
+        public static int previousBlinkState;
+
+        /// <summary>
         /// 被替换纹理的handle
         /// </summary>
         private static TextureHandle tHandle;
@@ -22,6 +31,8 @@ namespace CTCS0_Ats
 
         private static Bitmap passengerFreightBitmap;
 
+        private static Bitmap cabSignalBitmap;
+
         /// <summary>
         /// GDIHelper封装，适用于整个DMI
         /// </summary>
@@ -29,6 +40,8 @@ namespace CTCS0_Ats
 
         internal static void Load()
         {
+            frameCounter = 0;
+            previousBlinkState = 0;
             try
             {
                 TextureManager.Initialize();
@@ -70,6 +83,7 @@ namespace CTCS0_Ats
                 notchZeroBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/notchzero.png"));
                 tractionBrakeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/tractionbrake.png"));
                 passengerFreightBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/pf.png"));
+                cabSignalBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/cabsignal.png"));
             }
             catch (Exception ex)
             {
@@ -117,53 +131,49 @@ namespace CTCS0_Ats
             int engineStatusY = 134;
             int threeSpeedY = 189;
 
-            switch (Config.VehicleType)
+            if (Config.VehicleType == Config.VehicleTypeEnum.EMU && Config.BrakeType == Config.BrakeTypeEnum.Straight)
             {
-                case 3:
-                    bcPressureY = 109;
-                    engineStatusY = 134;
-                    threeSpeedY = 189;
-                    bitmapGDI.DrawImage(EMU_StatusWindowBitmap, 561, 81);
-                    // 电流
-                    DrawMonospaceNumber(Math.Abs((int)state.Current), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, 86, 11, 17);
-                    // 牵引/制动工况
-                    if (AtsMain.actualPowerPosition > 0)
-                    {
-                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 0, 23);
-                    }
-                    else if (AtsMain.actualPowerPosition < 0 || AtsMain.actualBrakePosition > 0)
-                    {
-                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 23, 23);
-                    }
-                    else
-                    {
-                        bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 46, 23);
-                    }
-                    break;
-                default:
-                    break;
-            }
-            // 制动缸压力
-            DrawMonospaceNumber((int)(state.BcPressure), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, bcPressureY, 11, 17);
+                bcPressureY = 109;
+                engineStatusY = 134;
+                threeSpeedY = 189;
+                bitmapGDI.DrawImage(EMU_StatusWindowBitmap, 561, 81);
+                // 电流
+                DrawMonospaceNumber(Math.Abs((int)state.Current), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, 86, 11, 17);
+                // 牵引/制动工况
+                if (AtsMain.actualPowerPosition > 0)
+                {
+                    bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 0, 23);
+                }
+                else if (AtsMain.actualPowerPosition < 0 || AtsMain.actualBrakePosition > 0)
+                {
+                    bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 23, 23);
+                }
+                else
+                {
+                    bitmapGDI.DrawImage(tractionBrakeBitmap, 699, engineStatusY, 46, 23);
+                }
+                // 制动缸压力
+                DrawMonospaceNumber((int)(state.BcPressure), 4, statusWhiteDigitBitmap, statusNullDigitBitmap, 724, bcPressureY, 11, 17);
 
-            // 换向器
-            bitmapGDI.DrawImage(reverserBitmap, 607, engineStatusY, (1 - AtsMain.userReverserPosition) * 23, 23);
+                // 换向器
+                bitmapGDI.DrawImage(reverserBitmap, 607, engineStatusY, (1 - AtsMain.userReverserPosition) * 23, 23);
 
-            // 零位
-            if (AtsMain.actualPowerPosition == 0)
-            {
-                bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 0, 23);
-            }
-            else
-            {
-                bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 23, 23);
-            }
+                // 零位
+                if (AtsMain.actualPowerPosition == 0)
+                {
+                    bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 0, 23);
+                }
+                else
+                {
+                    bitmapGDI.DrawImage(notchZeroBitmap, 653, engineStatusY, 23, 23);
+                }
 
-            // 三通道速度
-            int absSpeed3 = Math.Abs((int)Math.Ceiling(state.Speed));
-            DrawMonospaceNumber(absSpeed3, 3, statusGreenDigitBitmap, statusNullDigitBitmap, 664, threeSpeedY, 11, 17);
-            DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 697, threeSpeedY, 11, 17);
-            DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 730, threeSpeedY, 11, 17);
+                // 三通道速度
+                int absSpeed3 = Math.Abs((int)Math.Ceiling(state.Speed));
+                DrawMonospaceNumber(absSpeed3, 3, statusGreenDigitBitmap, statusNullDigitBitmap, 664, threeSpeedY, 11, 17);
+                DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 697, threeSpeedY, 11, 17);
+                DrawMonospaceNumber(absSpeed3, 3, statusGreyDigitBitmap, statusNullDigitBitmap, 730, threeSpeedY, 11, 17);
+            }
         }
 
         private static void DrawVehicleStatus(AtsMain.AtsVehicleState state)
@@ -204,10 +214,10 @@ namespace CTCS0_Ats
         {
             switch (Config.PassengerFreight)
             {
-                case 0:
+                case Config.PassengerFreightEnum.Passenger:
                     bitmapGDI.DrawImage(passengerFreightBitmap, 754, 330, 0, 24);
                     break;
-                case 1:
+                case Config.PassengerFreightEnum.Freight:
                     bitmapGDI.DrawImage(passengerFreightBitmap, 754, 330, 24, 24);
                     break;
                 default:
@@ -216,14 +226,86 @@ namespace CTCS0_Ats
             }
         }
 
-        internal static void Frame(AtsMain.AtsVehicleState state)
+        internal static void DrawCabSignal(CabSignal.CabSignalCode signal)
+        {
+            if (signal == CabSignal.CabSignalCode.UUS)
+            {
+                if (frameCounter >= (0.5 * Config.TargetFPS))
+                {
+                    frameCounter = 0;
+                    previousBlinkState = 1 - previousBlinkState;
+                }
+                switch (previousBlinkState)
+                {
+                    case 0:
+                        bitmapGDI.DrawImage(cabSignalBitmap, 8, 8, 708, 59);
+                        break;
+                    case 1:
+                        bitmapGDI.DrawImage(cabSignalBitmap, 8, 8, 944, 59);
+                        break;
+                }
+            }
+            else if (signal == CabSignal.CabSignalCode.U2S)
+            {
+                if (frameCounter >= (0.5 * Config.TargetFPS))
+                {
+                    frameCounter = 0;
+                    previousBlinkState = 1 - previousBlinkState;
+                }
+                switch (previousBlinkState)
+                {
+                    case 0:
+                        bitmapGDI.DrawImage(cabSignalBitmap, 8, 8, 826, 59);
+                        break;
+                    case 1:
+                        bitmapGDI.DrawImage(cabSignalBitmap, 8, 8, 944, 59);
+                        break;
+                }
+            }
+            else if (signal == CabSignal.CabSignalCode.HB)
+            {
+                if (frameCounter >= (0.5 * Config.TargetFPS))
+                {
+                    frameCounter = 0;
+                    previousBlinkState = 1 - previousBlinkState;
+                }
+                switch (previousBlinkState)
+                {
+                    case 0:
+                        bitmapGDI.DrawImage(cabSignalBitmap, 8, 8, 590, 59);
+                        break;
+                    case 1:
+                        bitmapGDI.DrawImage(cabSignalBitmap, 8, 8, 944, 59);
+                        break;
+                }
+            }
+            else if (signal == CabSignal.CabSignalCode.HU
+                || signal == CabSignal.CabSignalCode.U
+                || signal == CabSignal.CabSignalCode.LU
+                || signal == CabSignal.CabSignalCode.L
+                || signal == CabSignal.CabSignalCode.L2
+                || signal == CabSignal.CabSignalCode.L3
+                || signal == CabSignal.CabSignalCode.L4
+                || signal == CabSignal.CabSignalCode.L5
+                || signal == CabSignal.CabSignalCode.H
+                || signal == CabSignal.CabSignalCode.UU
+                || signal == CabSignal.CabSignalCode.U2
+                || signal == CabSignal.CabSignalCode.B)
+            {
+                bitmapGDI.DrawImage(cabSignalBitmap, 8, 8, (int)signal * 59, 59);
+            }
+        }
+
+        internal static void Frame(AtsMain.AtsVehicleState state, CabSignal.CabSignalCode signal)
         {
             if (tHandle.HasEnoughTimePassed(Config.TargetFPS))
             {
+                frameCounter += 1;
                 bitmapGDI.BeginGDI();
                 DrawBase();
                 DrawVehicleStatus(state);
                 DrawRightStatusBar();
+                DrawCabSignal(Config.ForceCabSignal >= 0 ? (CabSignal.CabSignalCode)Config.ForceCabSignal : signal);
                 bitmapGDI.EndGDI();
                 tHandle.Update(bitmapGDI);
             }

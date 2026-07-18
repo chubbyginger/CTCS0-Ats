@@ -5,13 +5,51 @@ namespace CTCS0_Ats
 {
     internal static class Config
     {
-        public static string TexturePath = "chubbyginger/InnoSig-E531/image/DMI.png";
-        public static int TextureWidth = 1024;
-        public static int TextureHeight = 1024;
-        public static int TargetFPS = 10;
-        public static int VehicleType = 3;
-        // 0: 客运, 1: 货运
-        public static int PassengerFreight = 0;
+        internal static string TexturePath = "chubbyginger/InnoSig-E531/image/DMI.png";
+        internal static int TextureWidth = 1024;
+        internal static int TextureHeight = 1024;
+        internal static int TargetFPS = 10;
+
+        internal enum VehicleTypeEnum
+        {
+            DL = 0,
+            DMU,
+            EL,
+            EMU
+        }
+
+        internal enum BrakeTypeEnum
+        {
+            Automatic = 0,
+            Straight
+        }
+
+        internal enum PassengerFreightEnum
+        {
+            Passenger = 0,
+            Freight
+        }
+
+        /// <summary>
+        /// 车辆类型（机车/动车组，电力/内燃）
+        /// </summary>
+        internal static VehicleTypeEnum VehicleType = VehicleTypeEnum.EMU;
+        /// <summary>
+        /// 车辆制动类型（自动/直通）
+        /// </summary>
+        internal static BrakeTypeEnum BrakeType = BrakeTypeEnum.Straight;
+        /// <summary>
+        /// 车辆客货状态
+        /// </summary>
+        internal static PassengerFreightEnum PassengerFreight = PassengerFreightEnum.Passenger;
+        /// <summary>
+        /// 门互锁旁路，false：定位，true：旁路。该设置仅对动车组列车有效，机车默认无互锁
+        /// </summary>
+        internal static bool DoorInterlockIso = false;
+        /// <summary>
+        /// 强制机车信号显示，-1表示不强制（使用实际信号），0~14对应CabSignalCode枚举值
+        /// </summary>
+        internal static int ForceCabSignal = -1;
 
         internal static void Load()
         {
@@ -38,8 +76,11 @@ namespace CTCS0_Ats
                         case "TextureWidth": TextureWidth = int.Parse(val); break;
                         case "TextureHeight": TextureHeight = int.Parse(val); break;
                         case "TargetFPS": TargetFPS = int.Parse(val); break;
-                        case "VehicleType": VehicleType = int.Parse(val); break;
-                        case "PassengerFreight": PassengerFreight = int.Parse(val); break;
+                        case "VehicleType": VehicleType = (VehicleTypeEnum)int.Parse(val); break;
+                        case "BrakeType": BrakeType = (BrakeTypeEnum)int.Parse(val); break;
+                        case "PassengerFreight": PassengerFreight = (PassengerFreightEnum)int.Parse(val); break;
+                        case "DoorInterlockIso": DoorInterlockIso = bool.Parse(val); break;
+                        case "ForceCabSignal": ForceCabSignal = int.Parse(val); break;
                     }
                 }
                 Tool.DebugWriteLine("config.ini加载完成");

@@ -93,13 +93,13 @@
   <ItemGroup>
     <Compile Include="AtsMain.cs" />
     <Compile Include="AtsStruct.cs" />
+    <Compile Include="CabSignal.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Tool.cs" />
     <Compile Include="DMI.cs" />
     <Compile Include="DynamicTextureCall.cs" />
     <Compile Include="Load.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TrackData.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

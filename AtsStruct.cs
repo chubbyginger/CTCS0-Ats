@@ -189,8 +189,9 @@ namespace CTCS0_Ats
         /// </summary>
         /// <param name="vehicleSpec">Spesifications of vehicle.</param>
         [DllExport(CallingConvention.StdCall)]
-        public static void SetVehicleSpec(AtsVehicleSpec vehicleSpec)
+        public static void SetVehicleSpec(AtsVehicleSpec spec)
         {
+            vehicleSpec = spec;
         }
 
         /// <summary>
@@ -258,43 +259,6 @@ namespace CTCS0_Ats
         /// <param name="hornIndex">Type of horn.</param>
         [DllExport(CallingConvention.StdCall)]
         public static void HornBlow(int hornIndex)
-        {
-
-        }
-
-        /// <summary>
-        /// Called when the door is opened
-        /// </summary>
-        [DllExport(CallingConvention.StdCall)]
-        public static void DoorOpen()
-        {
-
-        }
-
-        /// <summary>
-        /// Called when the door is closed
-        /// </summary>
-        [DllExport(CallingConvention.StdCall)]
-        public static void DoorClose()
-        {
-
-        }
-
-        /// <summary>
-        /// Called when current signal is changed
-        /// </summary>
-        /// <param name="signalIndex">Index of signal.</param>
-        [DllExport(CallingConvention.StdCall)]
-        public static void SetSignal(int signalIndex)
-        {
-        }
-
-        /// <summary>
-        /// Called when the beacon data is received
-        /// </summary>
-        /// <param name="beaconData">Received data of beacon.</param>
-        [DllExport(CallingConvention.StdCall)]
-        public static void SetBeaconData(AtsBeaconData beaconData)
         {
 
         }
