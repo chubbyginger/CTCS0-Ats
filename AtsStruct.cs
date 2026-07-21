@@ -240,7 +240,10 @@ namespace CTCS0_Ats
         [DllExport(CallingConvention.StdCall)]
         public static void KeyDown(int keyIndex)
         {
-
+            if (modeController != null)
+            {
+                modeController.OnKeyDown(keyIndex);
+            }
         }
 
         /// <summary>
@@ -250,7 +253,6 @@ namespace CTCS0_Ats
         [DllExport(CallingConvention.StdCall)]
         public static void KeyUp(int keyIndex)
         {
-
         }
 
         /// <summary>

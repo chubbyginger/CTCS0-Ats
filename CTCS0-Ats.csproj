@@ -99,6 +99,13 @@
     <Compile Include="DMI.cs" />
     <Compile Include="DynamicTextureCall.cs" />
     <Compile Include="Load.cs" />
+    <Compile Include="SpeedCurve.cs" />
+    <Compile Include="SpeedSupervisor.cs" />
+    <Compile Include="IOperationMode.cs" />
+    <Compile Include="DegradedMode.cs" />
+    <Compile Include="RestrictedMode.cs" />
+    <Compile Include="AntiSlipMonitor.cs" />
+    <Compile Include="ModeController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

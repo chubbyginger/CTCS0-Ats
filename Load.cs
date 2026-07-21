@@ -13,6 +13,8 @@ namespace CTCS0_Ats
             Tool.DebugWriteLine("CTCS-0插件已加载");
             Config.Load();
             DMI.Load();
+            modeController = new ModeController();
+            modeController.Initialize();
         }
     }
 }

@@ -22,7 +22,7 @@ namespace CTCS0_Ats
 
         // 各种位图资源
         private static Bitmap baseBitmap;
-        private static Bitmap currentSpeedDigitBitmap, limitSpeedDigitBitmap, targetDistanceDigitBitmap, nullDigitBigBitmap;
+        private static Bitmap currentSpeedDigitBitmap, limitSpeedDigitBitmap, targetDistanceDigitBitmap, nullDigitBigBitmap, targetDistanceNullBitmap;
         private static Bitmap dateDigitBitmap, timeDigitBitmap;
         // DL_DMU: 内燃机车、内燃动车组，自空制动机。DMU_Straight：内燃动车组直通制动机。EL：电力机车自空制动机。EMU：电动车组直通制动机。
         private static Bitmap DL_DMU_StatusWindowBitmap, DMU_StraightStatusWindowBitmap, EL_StatusWindowBitmap, EMU_StatusWindowBitmap;
@@ -32,6 +32,11 @@ namespace CTCS0_Ats
         private static Bitmap passengerFreightBitmap;
 
         private static Bitmap cabSignalBitmap;
+
+        private static Bitmap notchCutBitmap, serviceBrakeBitmap, emergencyBrakeBitmap;
+        private static Bitmap downgradeBitmap, shuntingBitmap, departBitmap, restrictedModeBitmap;
+        private static Bitmap reverseWarningBitmap;
+        private static Bitmap runawayProtectionCountdownBitmap;
 
         /// <summary>
         /// GDIHelper封装，适用于整个DMI
@@ -84,6 +89,15 @@ namespace CTCS0_Ats
                 tractionBrakeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/tractionbrake.png"));
                 passengerFreightBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/pf.png"));
                 cabSignalBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/cabsignal.png"));
+                targetDistanceNullBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/target_distance_null.png"));
+                notchCutBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/notchcut.png"));
+                serviceBrakeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/servicebrake.png"));
+                emergencyBrakeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/emergencybrake.png"));
+                downgradeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/downgrade.png"));
+                shuntingBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/shunting.png"));
+                departBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/depart.png"));
+                restrictedModeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/restricted_mode.png"));
+                reverseWarningBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/reverse_warning.png"));
             }
             catch (Exception ex)
             {
@@ -117,6 +131,17 @@ namespace CTCS0_Ats
             }
         }
 
+        /// <summary>
+        /// 绘制右对齐数字
+        /// </summary>
+        /// <param name="fullNumber">完整数字</param>
+        /// <param name="digits">一共有几位</param>
+        /// <param name="digitBitmap">数字的位图</param>
+        /// <param name="nullBitmap">对应的空位图</param>
+        /// <param name="x">最右边数字左上角X坐标</param>
+        /// <param name="y">最右边数字左上角Y坐标</param>
+        /// <param name="w">一个数字高度</param>
+        /// <param name="h">一个数字宽度</param>
         private static void DrawMonospaceNumber(int fullNumber, int digits, Bitmap digitBitmap, Bitmap nullBitmap, int x, int y, int w, int h)
         {
             for (int d = 0; d < digits; d++)
@@ -176,14 +201,29 @@ namespace CTCS0_Ats
             }
         }
 
-        private static void DrawVehicleStatus(AtsMain.AtsVehicleState state)
+        private static void DrawTopBar(AtsMain.AtsVehicleState state)
         {
             int absSpeed = Math.Abs((int)Math.Ceiling(state.Speed));
-            // 当前速度绘制
             DrawOneDigit(absSpeed, 2, currentSpeedDigitBitmap, nullDigitBigBitmap, 129, 14, 51);
             DrawOneDigit(absSpeed, 1, currentSpeedDigitBitmap, nullDigitBigBitmap, 158, 14, 51);
             DrawOneDigit(absSpeed, 0, currentSpeedDigitBitmap, nullDigitBigBitmap, 187, 14, 51);
 
+            int limitSpeed = (int)Math.Floor(AtsMain.modeController.CurrentServiceBrakeSpeed);
+            DrawMonospaceNumber(limitSpeed, 3, limitSpeedDigitBitmap, nullDigitBigBitmap, 307, 14, 29, 51);
+
+            if (AtsMain.modeController.HasValidTarget)
+            {
+                int targetDist = (int)Math.Floor(AtsMain.modeController.TargetDistance);
+                DrawMonospaceNumber(targetDist, 4, targetDistanceDigitBitmap, nullDigitBigBitmap, 483, 14, 29, 51);
+            }
+            else
+            {
+                bitmapGDI.DrawImage(targetDistanceNullBitmap, 374, 14);
+            }
+        }
+
+        private static void DrawVehicleStatus(AtsMain.AtsVehicleState state)
+        {
             // 绘制日期（实际日期）
             DateTime now = DateTime.Now;
             bitmapGDI.DrawImage(dateDigitBitmap, 691, 13, Tool.D(now.Year, 3, true) * 17, 17);
@@ -296,6 +336,47 @@ namespace CTCS0_Ats
             }
         }
 
+        internal static void DrawInterventionStatus(BrakeAction action, OperationMode mode)
+        {
+            if ((action & BrakeAction.Emergency) != 0)
+            {
+                bitmapGDI.DrawImage(emergencyBrakeBitmap, 754, 134);
+            }
+            if ((action & BrakeAction.ServiceBrake) != 0)
+            {
+                bitmapGDI.DrawImage(serviceBrakeBitmap, 754, 162);
+            }
+            if ((action & BrakeAction.PowerCut) != 0)
+            {
+                bitmapGDI.DrawImage(notchCutBitmap, 754, 190);
+            }
+        }
+
+        internal static void DrawOperationMode(OperationMode mode)
+        {
+            switch (mode)
+            {
+                case OperationMode.Degraded:
+                    bitmapGDI.DrawImage(downgradeBitmap, 754, 106);
+                    break;
+                case OperationMode.Restricted:
+                    bitmapGDI.DrawImage(restrictedModeBitmap, 344, 270);
+                    break;
+            }
+        }
+
+        internal static void DrawReverseControl()
+        {
+            bitmapGDI.DrawImage(reverseWarningBitmap, 250, 158);
+        }
+
+        internal static void DrawAntiSlipStatus(AntiSlipType type, float countdown)
+        {
+            // TODO: 绘制防溜报警信息（类型+倒计时）
+            bitmapGDI.DrawImage(runawayProtectionCountdownBitmap, 275, 240, (int)type * 250, 120);
+            DrawMonospaceNumber((int)Math.Floor(countdown), 2, limitSpeedDigitBitmap, nullDigitBigBitmap, 401, 302, 29, 51);
+        }
+
         internal static void Frame(AtsMain.AtsVehicleState state, CabSignal.CabSignalCode signal)
         {
             if (tHandle.HasEnoughTimePassed(Config.TargetFPS))
@@ -303,9 +384,20 @@ namespace CTCS0_Ats
                 frameCounter += 1;
                 bitmapGDI.BeginGDI();
                 DrawBase();
+                DrawTopBar(state);
                 DrawVehicleStatus(state);
                 DrawRightStatusBar();
                 DrawCabSignal(Config.ForceCabSignal >= 0 ? (CabSignal.CabSignalCode)Config.ForceCabSignal : signal);
+                DrawInterventionStatus(AtsMain.modeController.LastBrakeAction, AtsMain.modeController.CurrentModeType);
+                DrawOperationMode(AtsMain.modeController.CurrentModeType);
+                if (AtsMain.modeController.IsReversing)
+                {
+                    DrawReverseControl();
+                }
+                if (AtsMain.modeController.ActiveAntiSlipType != AntiSlipType.None)
+                {
+                    DrawAntiSlipStatus(AtsMain.modeController.ActiveAntiSlipType, AtsMain.modeController.AntiSlipCountdown);
+                }
                 bitmapGDI.EndGDI();
                 tHandle.Update(bitmapGDI);
             }

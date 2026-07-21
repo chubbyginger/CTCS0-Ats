@@ -50,6 +50,18 @@ namespace CTCS0_Ats
         /// 强制机车信号显示，-1表示不强制（使用实际信号），0~14对应CabSignalCode枚举值
         /// </summary>
         internal static int ForceCabSignal = -1;
+        /// <summary>
+        /// 列车标定常用制动减速度 (km/h/s)
+        /// </summary>
+        internal static float BrakeDeceleration = 3.6f;
+        /// <summary>
+        /// 空走时间 (s)
+        /// </summary>
+        internal static float EmptyRunTime = 3.0f;
+        /// <summary>
+        /// 列车最高允许速度 (km/h)
+        /// </summary>
+        internal static float MaxSpeed = 160f;
 
         internal static void Load()
         {
@@ -81,6 +93,9 @@ namespace CTCS0_Ats
                         case "PassengerFreight": PassengerFreight = (PassengerFreightEnum)int.Parse(val); break;
                         case "DoorInterlockIso": DoorInterlockIso = bool.Parse(val); break;
                         case "ForceCabSignal": ForceCabSignal = int.Parse(val); break;
+                        case "BrakeDeceleration": BrakeDeceleration = float.Parse(val); break;
+                        case "EmptyRunTime": EmptyRunTime = float.Parse(val); break;
+                        case "MaxSpeed": MaxSpeed = float.Parse(val); break;
                     }
                 }
                 Tool.DebugWriteLine("config.ini加载完成");
