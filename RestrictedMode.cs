@@ -102,7 +102,7 @@ namespace CTCS0_Ats
             float currentLocation = (float)AtsMain.vehicleState.Location;
             float farLocation = currentLocation + 50000;
             supervisor.LimitCurve = SpeedCurve.Constant(currentLocation, farLocation, 20);
-            supervisor.BuildBrakeCurves(Config.BrakeDeceleration, Config.EmptyRunTime);
+            supervisor.SetStationStop(false);
         }
 
         public float CurrentLimitSpeed => supervisor.CurrentLimitSpeed;
@@ -116,5 +116,6 @@ namespace CTCS0_Ats
         public AntiSlipType ActiveAntiSlipType => antiSlip.ActiveType;
         public float AntiSlipCountdown => antiSlip.AlarmCountdown;
         public SpeedCurve ServiceBrakeCurve => supervisor.ServiceBrakeCurve;
+        public SpeedCurve EmergencyBrakeCurve => supervisor.EmergencyBrakeCurve;
     }
 }

@@ -53,16 +53,18 @@ namespace CTCS0_Ats
         /// <summary>
         /// 列车标定常用制动减速度 (km/h/s)
         /// </summary>
-        internal static float BrakeDeceleration = 3.6f;
-        /// <summary>
-        /// 空走时间 (s)
-        /// </summary>
+        internal static float ServiceBrakeDeceleration = 2.88f;
+        internal static float EmergencyBrakeDeceleration = 3.6f;
         internal static float EmptyRunTime = 3.0f;
-        /// <summary>
-        /// 列车最高允许速度 (km/h)
-        /// </summary>
         internal static float MaxSpeed = 160f;
         internal static float BpNominalPressure = 500f;
+        internal static float CurveDisplayDistance = 2000f;
+        internal static int CurveSpeedScale = 160;
+        internal static float SafetyDistanceBaseServiceStation = 50f;
+        internal static float SafetyDistanceBaseEmergencyStation = 20f;
+        internal static float SafetyDistanceBaseServiceSection = 100f;
+        internal static float SafetyDistanceBaseEmergencySection = 70f;
+        internal static bool ShowEmergencyBrakeCurve = false;
 
         internal static void Load()
         {
@@ -94,10 +96,18 @@ namespace CTCS0_Ats
                         case "PassengerFreight": PassengerFreight = (PassengerFreightEnum)int.Parse(val); break;
                         case "DoorInterlockIso": DoorInterlockIso = bool.Parse(val); break;
                         case "ForceCabSignal": ForceCabSignal = int.Parse(val); break;
-                        case "BrakeDeceleration": BrakeDeceleration = float.Parse(val); break;
+                        case "ServiceBrakeDeceleration": ServiceBrakeDeceleration = float.Parse(val); break;
+                        case "EmergencyBrakeDeceleration": EmergencyBrakeDeceleration = float.Parse(val); break;
                         case "EmptyRunTime": EmptyRunTime = float.Parse(val); break;
                         case "MaxSpeed": MaxSpeed = float.Parse(val); break;
                         case "BpNominalPressure": BpNominalPressure = float.Parse(val); break;
+                        case "CurveDisplayDistance": CurveDisplayDistance = float.Parse(val); break;
+                        case "CurveSpeedScale": CurveSpeedScale = int.Parse(val); break;
+                        case "SafetyDistanceBaseServiceStation": SafetyDistanceBaseServiceStation = float.Parse(val); break;
+                        case "SafetyDistanceBaseEmergencyStation": SafetyDistanceBaseEmergencyStation = float.Parse(val); break;
+                        case "SafetyDistanceBaseServiceSection": SafetyDistanceBaseServiceSection = float.Parse(val); break;
+                        case "SafetyDistanceBaseEmergencySection": SafetyDistanceBaseEmergencySection = float.Parse(val); break;
+                        case "ShowEmergencyBrakeCurve": ShowEmergencyBrakeCurve = bool.Parse(val); break;
                     }
                 }
                 Tool.DebugWriteLine("config.ini加载完成");

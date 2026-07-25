@@ -107,6 +107,7 @@
     <Compile Include="AntiSlipMonitor.cs" />
     <Compile Include="ModeController.cs" />
     <Compile Include="PanelOutput.cs" />
+    <Compile Include="SpeedTrailBuffer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

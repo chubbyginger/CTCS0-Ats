@@ -27,5 +27,6 @@ namespace CTCS0_Ats
         AntiSlipType ActiveAntiSlipType { get; }
         float AntiSlipCountdown { get; }
         SpeedCurve ServiceBrakeCurve { get; }
+        SpeedCurve EmergencyBrakeCurve { get; }
     }
 }

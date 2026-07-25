@@ -18,6 +18,8 @@ namespace CTCS0_Ats
         internal AntiSlipType ActiveAntiSlipType;
         internal float AntiSlipCountdown;
         internal SpeedCurve ServiceBrakeCurve;
+        internal SpeedCurve EmergencyBrakeCurve;
+        internal SpeedTrailBuffer speedTrail;
 
         private int prevTime;
 
@@ -27,6 +29,7 @@ namespace CTCS0_Ats
             CurrentMode = new DegradedMode();
             LastBrakeAction = BrakeAction.None;
             prevTime = 0;
+            speedTrail = new SpeedTrailBuffer();
         }
 
         internal void Initialize()
@@ -85,6 +88,9 @@ namespace CTCS0_Ats
             ActiveAntiSlipType = CurrentMode.ActiveAntiSlipType;
             AntiSlipCountdown = CurrentMode.AntiSlipCountdown;
             ServiceBrakeCurve = CurrentMode.ServiceBrakeCurve;
+            EmergencyBrakeCurve = CurrentMode.EmergencyBrakeCurve;
+
+            speedTrail.Record((float)state.Location, state.Speed, IsReversing);
 
             return LastBrakeAction;
         }

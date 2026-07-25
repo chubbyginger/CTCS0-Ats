@@ -220,7 +220,7 @@ namespace CTCS0_Ats
             }
 
             supervisor.LimitCurve = limitCurve;
-            supervisor.BuildBrakeCurves(Config.BrakeDeceleration, Config.EmptyRunTime);
+            supervisor.SetStationStop(hasStopSignalLocation);
         }
 
         private static bool IsStopSignal(CabSignal.CabSignalCode signal)
@@ -274,5 +274,6 @@ namespace CTCS0_Ats
         public AntiSlipType ActiveAntiSlipType => antiSlip.ActiveType;
         public float AntiSlipCountdown => antiSlip.AlarmCountdown;
         public SpeedCurve ServiceBrakeCurve => supervisor.ServiceBrakeCurve;
+        public SpeedCurve EmergencyBrakeCurve => supervisor.EmergencyBrakeCurve;
     }
 }
