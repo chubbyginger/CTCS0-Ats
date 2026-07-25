@@ -273,5 +273,6 @@ namespace CTCS0_Ats
         public bool IsReversing => (float)AtsMain.vehicleState.Location < maxForwardLocation;
         public AntiSlipType ActiveAntiSlipType => antiSlip.ActiveType;
         public float AntiSlipCountdown => antiSlip.AlarmCountdown;
+        public SpeedCurve ServiceBrakeCurve => supervisor.ServiceBrakeCurve;
     }
 }

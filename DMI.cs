@@ -37,6 +37,7 @@ namespace CTCS0_Ats
         private static Bitmap downgradeBitmap, shuntingBitmap, departBitmap, restrictedModeBitmap;
         private static Bitmap reverseWarningBitmap;
         private static Bitmap runawayProtectionCountdownBitmap;
+        private static Bitmap releaseAntiSlipCountdownBitmap;
 
         /// <summary>
         /// GDIHelper封装，适用于整个DMI
@@ -98,6 +99,8 @@ namespace CTCS0_Ats
                 departBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/depart.png"));
                 restrictedModeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/restricted_mode.png"));
                 reverseWarningBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/reverse_warning.png"));
+                runawayProtectionCountdownBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/runaway_countdown_window.png"));
+                releaseAntiSlipCountdownBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/release_antislip_countdown_window.png"));
             }
             catch (Exception ex)
             {
@@ -372,9 +375,80 @@ namespace CTCS0_Ats
 
         internal static void DrawAntiSlipStatus(AntiSlipType type, float countdown)
         {
-            // TODO: 绘制防溜报警信息（类型+倒计时）
-            bitmapGDI.DrawImage(runawayProtectionCountdownBitmap, 275, 240, (int)type * 250, 120);
+            bitmapGDI.DrawImage(runawayProtectionCountdownBitmap, 276, 241, ((int)type - 1) * 120, 120);
             DrawMonospaceNumber((int)Math.Floor(countdown), 2, limitSpeedDigitBitmap, nullDigitBigBitmap, 401, 302, 29, 51);
+        }
+
+        private static System.Diagnostics.Stopwatch perfWatch = new System.Diagnostics.Stopwatch();
+        private static long perfFrameCount;
+        private static long perfTotalMs;
+
+        private static void DrawTestShape()
+        {
+            perfWatch.Restart();
+
+            var g = bitmapGDI.Graphics;
+            int cx = 400, cy = 300, r = 200;
+            int left = cx - r, top = cy - r, right = cx + r, bottom = cy + r;
+            int w = right - left, h = bottom - top;
+            float displayDistance = 2000f;
+            float maxDisplaySpeed = Config.MaxSpeed;
+
+            SpeedCurve srcCurve = AtsMain.modeController.ServiceBrakeCurve;
+
+            using (var redPen = new Pen(Color.Red, 2))
+            using (var gridPen = new Pen(Color.FromArgb(80, Color.White), 1))
+            using (var axisPen = new Pen(Color.FromArgb(120, Color.White), 1))
+            {
+                g.SetClip(new Rectangle(left, top, w, h));
+                g.Clear(Color.FromArgb(30, 0, 0, 0));
+
+                for (int i = 0; i <= 4; i++)
+                {
+                    int gy = bottom - (int)((float)i / 4 * h);
+                    g.DrawLine(gridPen, left, gy, right, gy);
+                }
+                for (int i = 0; i <= 4; i++)
+                {
+                    int gx = left + (int)((float)i / 4 * w);
+                    g.DrawLine(gridPen, gx, top, gx, bottom);
+                }
+
+                g.DrawLine(axisPen, left, bottom, right, bottom);
+                g.DrawLine(axisPen, left, top, left, bottom);
+
+                if (srcCurve != null && srcCurve.Points.Count >= 2)
+                {
+                    float currentLocation = (float)AtsMain.vehicleState.Location;
+                    SpeedCurve slice = srcCurve.GetRelativeSlice(currentLocation, displayDistance);
+
+                    var points = new System.Drawing.Point[slice.Points.Count];
+                    for (int i = 0; i < slice.Points.Count; i++)
+                    {
+                        float relLoc = slice.Points[i].Location;
+                        float speed = slice.Points[i].Speed;
+                        int px = left + (int)(relLoc / displayDistance * w);
+                        int py = bottom - (int)(speed / maxDisplaySpeed * h);
+                        py = Math.Max(top, Math.Min(bottom, py));
+                        points[i] = new System.Drawing.Point(px, py);
+                    }
+                    g.DrawLines(redPen, points);
+                }
+
+                g.ResetClip();
+            }
+
+            perfWatch.Stop();
+            perfFrameCount++;
+            perfTotalMs += perfWatch.ElapsedMilliseconds;
+            if (perfFrameCount % 60 == 0)
+            {
+                Tool.DebugWriteLine(string.Format(
+                    "DMI曲线绘制性能: 本帧{0}ms, 平均{1:F2}ms/帧, {2}帧",
+                    perfWatch.ElapsedMilliseconds,
+                    (double)perfTotalMs / perfFrameCount,
+                    perfFrameCount));
+            }
         }
 
         internal static void Frame(AtsMain.AtsVehicleState state, CabSignal.CabSignalCode signal)
@@ -399,6 +473,7 @@ namespace CTCS0_Ats
                     DrawAntiSlipStatus(AtsMain.modeController.ActiveAntiSlipType, AtsMain.modeController.AntiSlipCountdown);
                 }
                 bitmapGDI.EndGDI();
+                DrawTestShape();
                 tHandle.Update(bitmapGDI);
             }
         }

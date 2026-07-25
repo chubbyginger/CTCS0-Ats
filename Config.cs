@@ -62,6 +62,7 @@ namespace CTCS0_Ats
         /// 列车最高允许速度 (km/h)
         /// </summary>
         internal static float MaxSpeed = 160f;
+        internal static float BpNominalPressure = 500f;
 
         internal static void Load()
         {
@@ -96,6 +97,7 @@ namespace CTCS0_Ats
                         case "BrakeDeceleration": BrakeDeceleration = float.Parse(val); break;
                         case "EmptyRunTime": EmptyRunTime = float.Parse(val); break;
                         case "MaxSpeed": MaxSpeed = float.Parse(val); break;
+                        case "BpNominalPressure": BpNominalPressure = float.Parse(val); break;
                     }
                 }
                 Tool.DebugWriteLine("config.ini加载完成");

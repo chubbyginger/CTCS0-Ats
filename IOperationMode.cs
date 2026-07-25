@@ -26,5 +26,6 @@ namespace CTCS0_Ats
         bool IsReversing { get; }
         AntiSlipType ActiveAntiSlipType { get; }
         float AntiSlipCountdown { get; }
+        SpeedCurve ServiceBrakeCurve { get; }
     }
 }

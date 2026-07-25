@@ -115,5 +115,6 @@ namespace CTCS0_Ats
         public bool IsReversing => false;
         public AntiSlipType ActiveAntiSlipType => antiSlip.ActiveType;
         public float AntiSlipCountdown => antiSlip.AlarmCountdown;
+        public SpeedCurve ServiceBrakeCurve => supervisor.ServiceBrakeCurve;
     }
 }

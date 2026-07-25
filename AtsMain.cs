@@ -13,6 +13,7 @@ namespace CTCS0_Ats
         public static AtsVehicleState vehicleState;
 
         public static int doorInterlockPowerPosition;
+        public static bool doorOpen;
         public static string dllParentPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
         internal static ModeController modeController;
@@ -41,6 +42,7 @@ namespace CTCS0_Ats
         [DllExport(CallingConvention.StdCall)]
         public static void DoorOpen()
         {
+            doorOpen = true;
             if (!Config.DoorInterlockIso)
             {
                 doorInterlockPowerPosition = 0;
@@ -50,6 +52,7 @@ namespace CTCS0_Ats
         [DllExport(CallingConvention.StdCall)]
         public static void DoorClose()
         {
+            doorOpen = false;
             doorInterlockPowerPosition = vehicleSpec.PowerNotches;
         }
 
@@ -66,6 +69,9 @@ namespace CTCS0_Ats
             }
 
             DMI.Frame(vehicleState, CabSignal.currentSignal);
+
+            PanelOutput.Update(vehicleState);
+            PanelOutput.WritePanel(panelArray);
 
             int supervisionPower = (modeController != null) ? modeController.SupervisionPowerPosition : vehicleSpec.PowerNotches;
             int supervisionBrake = (modeController != null) ? modeController.SupervisionBrakePosition : 0;

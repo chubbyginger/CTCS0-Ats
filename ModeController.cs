@@ -17,6 +17,7 @@ namespace CTCS0_Ats
         internal bool IsReversing;
         internal AntiSlipType ActiveAntiSlipType;
         internal float AntiSlipCountdown;
+        internal SpeedCurve ServiceBrakeCurve;
 
         private int prevTime;
 
@@ -83,6 +84,7 @@ namespace CTCS0_Ats
             IsReversing = CurrentMode.IsReversing;
             ActiveAntiSlipType = CurrentMode.ActiveAntiSlipType;
             AntiSlipCountdown = CurrentMode.AntiSlipCountdown;
+            ServiceBrakeCurve = CurrentMode.ServiceBrakeCurve;
 
             return LastBrakeAction;
         }
