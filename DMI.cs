@@ -39,6 +39,10 @@ namespace CTCS0_Ats
         private static Bitmap runawayProtectionCountdownBitmap;
         private static Bitmap releaseAntiSlipCountdownBitmap;
 
+        private static Pen brakeCurvePen;
+        private static Pen emergencyCurvePen;
+        private static Pen speedTrailPen;
+
         /// <summary>
         /// GDIHelper封装，适用于整个DMI
         /// </summary>
@@ -108,6 +112,9 @@ namespace CTCS0_Ats
                 Tool.DebugWriteLine("DMI位图资源加载阶段错误：" + ex.ToString());
             }
 
+            brakeCurvePen = new Pen(Color.FromArgb(0xfb, 0x00, 0x00), 1);
+            emergencyCurvePen = new Pen(Color.FromArgb(0x00, 0x00, 0xa7), 1);
+            speedTrailPen = new Pen(Color.FromArgb(0x00, 0xa7, 0x00), 1);
         }
 
         private static void DrawBase()
@@ -379,76 +386,136 @@ namespace CTCS0_Ats
             DrawMonospaceNumber((int)Math.Floor(countdown), 2, limitSpeedDigitBitmap, nullDigitBigBitmap, 401, 302, 29, 51);
         }
 
-        private static System.Diagnostics.Stopwatch perfWatch = new System.Diagnostics.Stopwatch();
-        private static long perfFrameCount;
-        private static long perfTotalMs;
-
-        private static void DrawTestShape()
+        private static void DrawBrakeCurve()
         {
-            perfWatch.Restart();
+            const int CUR_POS_X = 184;
+            const int LEFT_WIDTH = 139;
+            const int RIGHT_WIDTH = 563;
+            const int CURVE_TOP = 84;
+            const int CURVE_BOTTOM = 452;
+            const int SCALE_Y = 157;
+            const int CURVE_LEFT = CUR_POS_X - LEFT_WIDTH;
+            const int CURVE_RIGHT = CUR_POS_X + RIGHT_WIDTH;
+            const int CURVE_W = LEFT_WIDTH + RIGHT_WIDTH;
+            const int CURVE_H = CURVE_BOTTOM - CURVE_TOP;
+
+            float displayDistance = Config.CurveDisplayDistance;
+            int leftDist = (int)Math.Round(displayDistance * LEFT_WIDTH / RIGHT_WIDTH);
+            float scaleSpeed = (float)Config.CurveSpeedScale;
+            float pixelsPerMeter = (float)RIGHT_WIDTH / displayDistance;
+            float pixelsPerKmh = (float)(CURVE_BOTTOM - SCALE_Y) / scaleSpeed;
+
+            float currentLocation = (float)AtsMain.vehicleState.Location;
 
             var g = bitmapGDI.Graphics;
-            int cx = 400, cy = 300, r = 200;
-            int left = cx - r, top = cy - r, right = cx + r, bottom = cy + r;
-            int w = right - left, h = bottom - top;
-            float displayDistance = 2000f;
-            float maxDisplaySpeed = Config.MaxSpeed;
+            g.SetClip(new Rectangle(CURVE_LEFT, CURVE_TOP, CURVE_W, CURVE_H));
 
-            SpeedCurve srcCurve = AtsMain.modeController.ServiceBrakeCurve;
+            SpeedCurve brakeCurve = AtsMain.modeController.ServiceBrakeCurve
+                ?? AtsMain.modeController.EmergencyBrakeCurve;
 
-            using (var redPen = new Pen(Color.Red, 2))
-            using (var gridPen = new Pen(Color.FromArgb(80, Color.White), 1))
-            using (var axisPen = new Pen(Color.FromArgb(120, Color.White), 1))
+            if (brakeCurve != null && brakeCurve.Points.Count >= 2)
             {
-                g.SetClip(new Rectangle(left, top, w, h));
-                g.Clear(Color.FromArgb(30, 0, 0, 0));
+                float fromLoc = currentLocation - leftDist;
+                float toLoc = currentLocation + displayDistance;
 
-                for (int i = 0; i <= 4; i++)
+                var points = new System.Collections.Generic.List<Point>();
+                foreach (var p in brakeCurve.Points)
                 {
-                    int gy = bottom - (int)((float)i / 4 * h);
-                    g.DrawLine(gridPen, left, gy, right, gy);
+                    if (p.Location < fromLoc || p.Location > toLoc) continue;
+                    int px = CUR_POS_X + (int)((p.Location - currentLocation) * pixelsPerMeter);
+                    int py = CURVE_BOTTOM - (int)(p.Speed * pixelsPerKmh);
+                    py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                    points.Add(new Point(px, py));
                 }
-                for (int i = 0; i <= 4; i++)
+
+                if (points.Count >= 2)
                 {
-                    int gx = left + (int)((float)i / 4 * w);
-                    g.DrawLine(gridPen, gx, top, gx, bottom);
-                }
-
-                g.DrawLine(axisPen, left, bottom, right, bottom);
-                g.DrawLine(axisPen, left, top, left, bottom);
-
-                if (srcCurve != null && srcCurve.Points.Count >= 2)
-                {
-                    float currentLocation = (float)AtsMain.vehicleState.Location;
-                    SpeedCurve slice = srcCurve.GetRelativeSlice(currentLocation, displayDistance);
-
-                    var points = new System.Drawing.Point[slice.Points.Count];
-                    for (int i = 0; i < slice.Points.Count; i++)
+                    if (points[0].X > CURVE_LEFT)
                     {
-                        float relLoc = slice.Points[i].Location;
-                        float speed = slice.Points[i].Speed;
-                        int px = left + (int)(relLoc / displayDistance * w);
-                        int py = bottom - (int)(speed / maxDisplaySpeed * h);
-                        py = Math.Max(top, Math.Min(bottom, py));
-                        points[i] = new System.Drawing.Point(px, py);
+                        float edgeLoc = fromLoc;
+                        float edgeSpeed = brakeCurve.GetSpeedAt(edgeLoc);
+                        int px = CUR_POS_X + (int)((edgeLoc - currentLocation) * pixelsPerMeter);
+                        int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
+                        py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                        points.Insert(0, new Point(px, py));
                     }
-                    g.DrawLines(redPen, points);
+                    if (points[points.Count - 1].X < CURVE_RIGHT)
+                    {
+                        float edgeLoc = toLoc;
+                        float edgeSpeed = brakeCurve.GetSpeedAt(edgeLoc);
+                        int px = CUR_POS_X + (int)((edgeLoc - currentLocation) * pixelsPerMeter);
+                        int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
+                        py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                        points.Add(new Point(px, py));
+                    }
+
+                    g.DrawLines(brakeCurvePen, points.ToArray());
                 }
-
-                g.ResetClip();
             }
 
-            perfWatch.Stop();
-            perfFrameCount++;
-            perfTotalMs += perfWatch.ElapsedMilliseconds;
-            if (perfFrameCount % 60 == 0)
+            if (Config.ShowEmergencyBrakeCurve)
             {
-                Tool.DebugWriteLine(string.Format(
-                    "DMI曲线绘制性能: 本帧{0}ms, 平均{1:F2}ms/帧, {2}帧",
-                    perfWatch.ElapsedMilliseconds,
-                    (double)perfTotalMs / perfFrameCount,
-                    perfFrameCount));
+                SpeedCurve emgCurve = AtsMain.modeController.EmergencyBrakeCurve;
+
+                if (emgCurve != null && emgCurve.Points.Count >= 2)
+                {
+                    float emgFromLoc = currentLocation - leftDist;
+                    float emgToLoc = currentLocation + displayDistance;
+
+                    var emgPoints = new System.Collections.Generic.List<Point>();
+                    foreach (var p in emgCurve.Points)
+                    {
+                        if (p.Location < emgFromLoc || p.Location > emgToLoc) continue;
+                        int px = CUR_POS_X + (int)((p.Location - currentLocation) * pixelsPerMeter);
+                        int py = CURVE_BOTTOM - (int)(p.Speed * pixelsPerKmh);
+                        py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                        emgPoints.Add(new Point(px, py));
+                    }
+
+                    if (emgPoints.Count >= 2)
+                    {
+                        if (emgPoints[0].X > CURVE_LEFT)
+                        {
+                            float edgeSpeed = emgCurve.GetSpeedAt(emgFromLoc);
+                            int px = CUR_POS_X + (int)((emgFromLoc - currentLocation) * pixelsPerMeter);
+                            int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
+                            py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                            emgPoints.Insert(0, new Point(px, py));
+                        }
+                        if (emgPoints[emgPoints.Count - 1].X < CURVE_RIGHT)
+                        {
+                            float edgeSpeed = emgCurve.GetSpeedAt(emgToLoc);
+                            int px = CUR_POS_X + (int)((emgToLoc - currentLocation) * pixelsPerMeter);
+                            int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
+                            py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                            emgPoints.Add(new Point(px, py));
+                        }
+
+                        g.DrawLines(emergencyCurvePen, emgPoints.ToArray());
+                    }
+                }
             }
+
+            if (!AtsMain.modeController.IsReversing)
+            {
+                var trailPoints = AtsMain.modeController.speedTrail.GetTrailInRange(
+                    currentLocation - leftDist, currentLocation);
+
+                if (trailPoints.Count >= 2)
+                {
+                    var drawPoints = new Point[trailPoints.Count];
+                    for (int i = 0; i < trailPoints.Count; i++)
+                    {
+                        int px = CUR_POS_X + (int)((trailPoints[i].Location - currentLocation) * pixelsPerMeter);
+                        int py = CURVE_BOTTOM - (int)(trailPoints[i].Speed * pixelsPerKmh);
+                        py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                        drawPoints[i] = new Point(px, py);
+                    }
+                    g.DrawLines(speedTrailPen, drawPoints);
+                }
+            }
+
+            g.ResetClip();
         }
 
         internal static void Frame(AtsMain.AtsVehicleState state, CabSignal.CabSignalCode signal)
@@ -473,7 +540,7 @@ namespace CTCS0_Ats
                     DrawAntiSlipStatus(AtsMain.modeController.ActiveAntiSlipType, AtsMain.modeController.AntiSlipCountdown);
                 }
                 bitmapGDI.EndGDI();
-                DrawTestShape();
+                DrawBrakeCurve();
                 tHandle.Update(bitmapGDI);
             }
         }

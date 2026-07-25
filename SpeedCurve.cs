@@ -136,11 +136,11 @@ namespace CTCS0_Ats
         }
 
         internal SpeedCurve GenerateBrakeCurve(float decelerationKmhPerS, float emptyRunTimeS,
-            bool includeEmptyRun, float brakeCoefficient, float safetyDistance)
+            bool includeEmptyRun, float safetyDistance)
         {
             if (Points.Count == 0) return new SpeedCurve();
 
-            float decelMs2 = (decelerationKmhPerS / 3.6f) * brakeCoefficient;
+            float decelMs2 = decelerationKmhPerS / 3.6f;
             float tk = includeEmptyRun ? emptyRunTimeS : 0;
 
             var result = new SpeedCurve();
@@ -214,6 +214,16 @@ namespace CTCS0_Ats
             }
 
             return deduped;
+        }
+
+        internal SpeedCurve AddOffset(float offset)
+        {
+            var result = new SpeedCurve();
+            foreach (var p in Points)
+            {
+                result.Points.Add(new SpeedPoint(p.Location, p.Speed + offset));
+            }
+            return result;
         }
 
         internal SpeedCurve GetRelativeSlice(float currentLocation, float displayDistance)

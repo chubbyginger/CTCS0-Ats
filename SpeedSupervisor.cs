@@ -4,10 +4,12 @@ namespace CTCS0_Ats
 {
     internal struct SupervisionThresholds
     {
-        internal float WarningOffset;
-        internal float PowerCutOffset;
         internal float ServiceBrakeOffset;
         internal float EmergencyOffset;
+        internal float ConstWarningOffset;
+        internal float ConstPowerCutOffset;
+        internal float DecelWarningOffset;
+        internal float DecelPowerCutOffset;
 
         internal static SupervisionThresholds Normal()
         {
@@ -15,10 +17,12 @@ namespace CTCS0_Ats
             float serviceBrakeOffset = HasServiceBrake() ? 5 : emergencyOffset;
             return new SupervisionThresholds
             {
-                WarningOffset = 2,
-                PowerCutOffset = 3,
                 ServiceBrakeOffset = serviceBrakeOffset,
-                EmergencyOffset = emergencyOffset
+                EmergencyOffset = emergencyOffset,
+                ConstWarningOffset = 3,
+                ConstPowerCutOffset = 2,
+                DecelWarningOffset = 5,
+                DecelPowerCutOffset = 1
             };
         }
 
@@ -26,10 +30,12 @@ namespace CTCS0_Ats
         {
             return new SupervisionThresholds
             {
-                WarningOffset = 0,
-                PowerCutOffset = 1,
                 ServiceBrakeOffset = 3,
-                EmergencyOffset = 5
+                EmergencyOffset = 5,
+                ConstWarningOffset = 3,
+                ConstPowerCutOffset = 2,
+                DecelWarningOffset = 5,
+                DecelPowerCutOffset = 1
             };
         }
 
@@ -39,10 +45,12 @@ namespace CTCS0_Ats
             float serviceBrakeOffset = HasServiceBrake() ? 1 : emergencyOffset;
             return new SupervisionThresholds
             {
-                WarningOffset = 2,
-                PowerCutOffset = 1,
                 ServiceBrakeOffset = serviceBrakeOffset,
-                EmergencyOffset = emergencyOffset
+                EmergencyOffset = emergencyOffset,
+                ConstWarningOffset = 3,
+                ConstPowerCutOffset = 2,
+                DecelWarningOffset = 5,
+                DecelPowerCutOffset = 1
             };
         }
 
@@ -52,10 +60,12 @@ namespace CTCS0_Ats
             float serviceBrakeOffset = HasServiceBrake() ? 1 : emergencyOffset;
             return new SupervisionThresholds
             {
-                WarningOffset = 2,
-                PowerCutOffset = 1,
                 ServiceBrakeOffset = serviceBrakeOffset,
-                EmergencyOffset = emergencyOffset
+                EmergencyOffset = emergencyOffset,
+                ConstWarningOffset = 3,
+                ConstPowerCutOffset = 2,
+                DecelWarningOffset = 5,
+                DecelPowerCutOffset = 1
             };
         }
 
@@ -98,6 +108,7 @@ namespace CTCS0_Ats
         private bool serviceBrakeLatched;
         private bool emergencyBrakeLatched;
         private float decelerationTargetSpeed;
+        private bool isStationStop;
 
         internal BrakeAction Evaluate(float currentLocation, float currentSpeed)
         {
@@ -115,8 +126,9 @@ namespace CTCS0_Ats
             }
 
             CurrentLimitSpeed = LimitCurve.GetSpeedAt(currentLocation);
-
             isInDecelerationZone = IsDecelerationZone(currentLocation);
+
+            BuildBrakeCurves(Math.Abs(currentSpeed));
 
             if (isInDecelerationZone)
             {
@@ -190,27 +202,23 @@ namespace CTCS0_Ats
 
             if (!emergencyBrakeLatched)
             {
-                if (isInDecelerationZone)
+                float refSpeed = HasServiceBrake()
+                    ? CurrentServiceBrakeSpeed
+                    : CurrentEmergencySpeed;
+                float warningOffset = isInDecelerationZone
+                    ? Thresholds.DecelWarningOffset
+                    : Thresholds.ConstWarningOffset;
+                float powerCutOffset = isInDecelerationZone
+                    ? Thresholds.DecelPowerCutOffset
+                    : Thresholds.ConstPowerCutOffset;
+
+                if (currentSpeed >= refSpeed - powerCutOffset)
                 {
-                    if (currentSpeed >= CurrentServiceBrakeSpeed - 1)
-                    {
-                        action |= BrakeAction.PowerCut;
-                    }
-                    if (currentSpeed >= CurrentServiceBrakeSpeed - 5)
-                    {
-                        action |= BrakeAction.Warning;
-                    }
+                    action |= BrakeAction.PowerCut;
                 }
-                else
+                if (currentSpeed >= refSpeed - warningOffset)
                 {
-                    if (currentSpeed >= CurrentServiceBrakeSpeed - 2)
-                    {
-                        action |= BrakeAction.PowerCut;
-                    }
-                    if (currentSpeed >= CurrentServiceBrakeSpeed - 3)
-                    {
-                        action |= BrakeAction.Warning;
-                    }
+                    action |= BrakeAction.Warning;
                 }
             }
 
@@ -242,38 +250,69 @@ namespace CTCS0_Ats
             return action;
         }
 
-        internal void BuildBrakeCurves(float deceleration, float emptyRunTime)
+        internal void BuildBrakeCurves(float currentSpeedKmh)
         {
             if (LimitCurve == null || LimitCurve.Points.Count == 0) return;
 
             bool isStopZone = IsStopZone();
+            float rangeStart = LimitCurve.Points[0].Location;
+            float rangeEnd = LimitCurve.Points[LimitCurve.Points.Count - 1].Location;
 
             if (HasServiceBrake())
             {
-                bool svcIncludeEmptyRun = true;
-                float svcBrakeCoeff = 0.8f;
-                float svcSafetyDist = isStopZone ? 100 : 0;
+                float svcSafetyDist = 0;
+                if (isStopZone)
+                {
+                    float aBase = isStationStop
+                        ? Config.SafetyDistanceBaseServiceStation
+                        : Config.SafetyDistanceBaseServiceSection;
+                    svcSafetyDist = aBase + 0.5f * currentSpeedKmh;
+                }
 
-                ServiceBrakeCurve = LimitCurve.GenerateBrakeCurve(
-                    deceleration, emptyRunTime, svcIncludeEmptyRun, svcBrakeCoeff, svcSafetyDist);
+                var rawSvc = LimitCurve.GenerateBrakeCurve(
+                    Config.ServiceBrakeDeceleration, Config.EmptyRunTime, true, svcSafetyDist);
+
+                var svcBase = SpeedCurve.Constant(rangeStart, rangeEnd,
+                    LimitCurve.Points[0].Speed + Thresholds.ServiceBrakeOffset);
+                var svcWithOffset = rawSvc.AddOffset(Thresholds.ServiceBrakeOffset);
+                ServiceBrakeCurve = SpeedCurve.Min(svcBase, svcWithOffset);
             }
             else
             {
                 ServiceBrakeCurve = null;
             }
 
-            bool emgIncludeEmptyRun = isStopZone;
-            float emgBrakeCoeff = 1.0f;
-            float emgSafetyDist = isStopZone ? 70 : 0;
+            bool emgIncludeEmptyRun;
+            if (isStopZone)
+            {
+                emgIncludeEmptyRun = true;
+            }
+            else
+            {
+                emgIncludeEmptyRun = !HasServiceBrake();
+            }
 
-            EmergencyBrakeCurve = LimitCurve.GenerateBrakeCurve(
-                deceleration, emptyRunTime, emgIncludeEmptyRun, emgBrakeCoeff, emgSafetyDist);
+            float emgSafetyDist = 0;
+            if (isStopZone)
+            {
+                float aBase = isStationStop
+                    ? Config.SafetyDistanceBaseEmergencyStation
+                    : Config.SafetyDistanceBaseEmergencySection;
+                emgSafetyDist = aBase + 0.5f * currentSpeedKmh;
+            }
 
-            Tool.DebugWriteLine(string.Format(
-                "制动曲线生成: {0}, 紧急制动曲线{1}点, 停车区={2}",
-                HasServiceBrake() ? "常用制动曲线" + ServiceBrakeCurve.Points.Count + "点" : "无常用制动",
-                EmergencyBrakeCurve.Points.Count,
-                isStopZone));
+            var rawEmg = LimitCurve.GenerateBrakeCurve(
+                Config.EmergencyBrakeDeceleration, Config.EmptyRunTime, emgIncludeEmptyRun, emgSafetyDist);
+
+            var emgBase = SpeedCurve.Constant(rangeStart, rangeEnd,
+                LimitCurve.Points[0].Speed + Thresholds.EmergencyOffset);
+            var emgWithOffset = rawEmg.AddOffset(Thresholds.EmergencyOffset);
+            EmergencyBrakeCurve = SpeedCurve.Min(emgBase, emgWithOffset);
+        }
+
+        internal void SetStationStop(bool stationStop)
+        {
+            isStationStop = stationStop;
         }
 
         private bool IsDecelerationZone(float currentLocation)
