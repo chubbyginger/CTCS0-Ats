@@ -46,6 +46,9 @@ namespace CTCS0_Ats
 
             CurrentMode.Exit();
 
+            speedTrail.Reset();
+            brakeTrail.Reset();
+
             CurrentModeType = newMode;
             switch (newMode)
             {
@@ -55,10 +58,12 @@ namespace CTCS0_Ats
                 case OperationMode.Restricted:
                     CurrentMode = new RestrictedMode();
                     break;
-                case OperationMode.Normal:
                 case OperationMode.Shunting:
+                    CurrentMode = new ShuntingMode();
+                    break;
+                case OperationMode.Normal:
                     CurrentMode = new DegradedMode();
-                    Tool.DebugWriteLine("模式控制器: 模式" + newMode.ToString() + "尚未实现, 回退降级");
+                    Tool.DebugWriteLine("模式控制器: 模式Normal尚未实现, 回退降级");
                     break;
             }
 
@@ -124,6 +129,18 @@ namespace CTCS0_Ats
                 if (AtsMain.vehicleState.Speed < 0.5f)
                 {
                     SwitchMode(OperationMode.Restricted);
+                }
+                return;
+            }
+            if (keyIndex == (int)AtsMain.AtsKey.B1)
+            {
+                if (CurrentModeType == OperationMode.Shunting)
+                {
+                    SwitchMode(OperationMode.Degraded);
+                }
+                else if (AtsMain.vehicleState.Speed < 0.5f)
+                {
+                    SwitchMode(OperationMode.Shunting);
                 }
                 return;
             }

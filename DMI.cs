@@ -372,6 +372,10 @@ namespace CTCS0_Ats
                 case OperationMode.Restricted:
                     bitmapGDI.DrawImage(restrictedModeBitmap, 344, 270);
                     break;
+                case OperationMode.Shunting:
+                    bitmapGDI.DrawImage(downgradeBitmap, 754, 106);
+                    bitmapGDI.DrawImage(shuntingBitmap, 754, 274);
+                    break;
             }
         }
 

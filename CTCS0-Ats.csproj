@@ -104,6 +104,7 @@
     <Compile Include="IOperationMode.cs" />
     <Compile Include="DegradedMode.cs" />
     <Compile Include="RestrictedMode.cs" />
+    <Compile Include="ShuntingMode.cs" />
     <Compile Include="AntiSlipMonitor.cs" />
     <Compile Include="ModeController.cs" />
     <Compile Include="PanelOutput.cs" />
