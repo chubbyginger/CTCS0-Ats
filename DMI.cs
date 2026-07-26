@@ -386,6 +386,75 @@ namespace CTCS0_Ats
             DrawMonospaceNumber((int)Math.Floor(countdown), 2, limitSpeedDigitBitmap, nullDigitBigBitmap, 401, 302, 29, 51);
         }
 
+        private static void DrawSingleCurve(System.Drawing.Graphics g, SpeedCurve curve, Pen pen,
+            float currentLocation, float fromLoc, float toLoc,
+            float pixelsPerMeter, float pixelsPerKmh)
+        {
+            if (curve == null || curve.Points.Count < 2) return;
+
+            const int CUR_POS_X = 184;
+            const int CURVE_TOP = 84;
+            const int CURVE_BOTTOM = 452;
+            const int CURVE_LEFT = 45;
+            const int CURVE_RIGHT = 747;
+
+            var points = new System.Collections.Generic.List<Point>();
+            foreach (var p in curve.Points)
+            {
+                if (p.Location < fromLoc || p.Location > toLoc) continue;
+                int px = CUR_POS_X + (int)((p.Location - currentLocation) * pixelsPerMeter);
+                int py = CURVE_BOTTOM - (int)(p.Speed * pixelsPerKmh);
+                py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                points.Add(new Point(px, py));
+            }
+
+            if (points.Count == 0 || points[0].X > CURVE_LEFT)
+            {
+                float edgeSpeed = curve.GetSpeedAt(fromLoc);
+                int px = CUR_POS_X + (int)((fromLoc - currentLocation) * pixelsPerMeter);
+                int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
+                py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                points.Insert(0, new Point(px, py));
+            }
+            if (points.Count <= 1 || points[points.Count - 1].X < CURVE_RIGHT)
+            {
+                float edgeSpeed = curve.GetSpeedAt(toLoc);
+                int px = CUR_POS_X + (int)((toLoc - currentLocation) * pixelsPerMeter);
+                int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
+                py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                points.Add(new Point(px, py));
+            }
+
+            if (points.Count >= 2)
+            {
+                g.DrawLines(pen, points.ToArray());
+            }
+        }
+
+        private static void DrawBrakeTrail(System.Drawing.Graphics g, Pen pen,
+            System.Collections.Generic.List<BrakeCurveTrailPoint> trailPoints, bool useEmergency,
+            float currentLocation, float fromLoc,
+            float pixelsPerMeter, float pixelsPerKmh)
+        {
+            if (trailPoints.Count < 2) return;
+
+            const int CUR_POS_X = 184;
+            const int CURVE_TOP = 84;
+            const int CURVE_BOTTOM = 452;
+
+            var points = new System.Collections.Generic.List<Point>();
+            foreach (var p in trailPoints)
+            {
+                float speed = useEmergency ? p.EmergencyBrakeSpeed : p.ServiceBrakeSpeed;
+                int px = CUR_POS_X + (int)((p.Location - currentLocation) * pixelsPerMeter);
+                int py = CURVE_BOTTOM - (int)(speed * pixelsPerKmh);
+                py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
+                points.Add(new Point(px, py));
+            }
+
+            g.DrawLines(pen, points.ToArray());
+        }
+
         private static void DrawBrakeCurve()
         {
             const int CUR_POS_X = 184;
@@ -395,7 +464,6 @@ namespace CTCS0_Ats
             const int CURVE_BOTTOM = 452;
             const int SCALE_Y = 157;
             const int CURVE_LEFT = CUR_POS_X - LEFT_WIDTH;
-            const int CURVE_RIGHT = CUR_POS_X + RIGHT_WIDTH;
             const int CURVE_W = LEFT_WIDTH + RIGHT_WIDTH;
             const int CURVE_H = CURVE_BOTTOM - CURVE_TOP;
 
@@ -406,94 +474,32 @@ namespace CTCS0_Ats
             float pixelsPerKmh = (float)(CURVE_BOTTOM - SCALE_Y) / scaleSpeed;
 
             float currentLocation = (float)AtsMain.vehicleState.Location;
+            float fromLoc = currentLocation - leftDist;
+            float toLoc = currentLocation + displayDistance;
 
             var g = bitmapGDI.Graphics;
             g.SetClip(new Rectangle(CURVE_LEFT, CURVE_TOP, CURVE_W, CURVE_H));
 
-            SpeedCurve brakeCurve = AtsMain.modeController.ServiceBrakeCurve
+            bool useEmergency = Config.BrakeType != Config.BrakeTypeEnum.Straight;
+
+            var brakeTrailPoints = AtsMain.modeController.brakeTrail.GetTrailInRange(
+                fromLoc, currentLocation);
+            DrawBrakeTrail(g, brakeCurvePen, brakeTrailPoints, useEmergency,
+                currentLocation, fromLoc, pixelsPerMeter, pixelsPerKmh);
+
+            SpeedCurve curPrimary = AtsMain.modeController.ServiceBrakeCurve
                 ?? AtsMain.modeController.EmergencyBrakeCurve;
-
-            if (brakeCurve != null && brakeCurve.Points.Count >= 2)
-            {
-                float fromLoc = currentLocation - leftDist;
-                float toLoc = currentLocation + displayDistance;
-
-                var points = new System.Collections.Generic.List<Point>();
-                foreach (var p in brakeCurve.Points)
-                {
-                    if (p.Location < fromLoc || p.Location > toLoc) continue;
-                    int px = CUR_POS_X + (int)((p.Location - currentLocation) * pixelsPerMeter);
-                    int py = CURVE_BOTTOM - (int)(p.Speed * pixelsPerKmh);
-                    py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
-                    points.Add(new Point(px, py));
-                }
-
-                if (points.Count >= 2)
-                {
-                    if (points[0].X > CURVE_LEFT)
-                    {
-                        float edgeLoc = fromLoc;
-                        float edgeSpeed = brakeCurve.GetSpeedAt(edgeLoc);
-                        int px = CUR_POS_X + (int)((edgeLoc - currentLocation) * pixelsPerMeter);
-                        int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
-                        py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
-                        points.Insert(0, new Point(px, py));
-                    }
-                    if (points[points.Count - 1].X < CURVE_RIGHT)
-                    {
-                        float edgeLoc = toLoc;
-                        float edgeSpeed = brakeCurve.GetSpeedAt(edgeLoc);
-                        int px = CUR_POS_X + (int)((edgeLoc - currentLocation) * pixelsPerMeter);
-                        int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
-                        py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
-                        points.Add(new Point(px, py));
-                    }
-
-                    g.DrawLines(brakeCurvePen, points.ToArray());
-                }
-            }
+            DrawSingleCurve(g, curPrimary, brakeCurvePen,
+                currentLocation, currentLocation, toLoc, pixelsPerMeter, pixelsPerKmh);
 
             if (Config.ShowEmergencyBrakeCurve)
             {
-                SpeedCurve emgCurve = AtsMain.modeController.EmergencyBrakeCurve;
+                DrawBrakeTrail(g, emergencyCurvePen, brakeTrailPoints, true,
+                    currentLocation, fromLoc, pixelsPerMeter, pixelsPerKmh);
 
-                if (emgCurve != null && emgCurve.Points.Count >= 2)
-                {
-                    float emgFromLoc = currentLocation - leftDist;
-                    float emgToLoc = currentLocation + displayDistance;
-
-                    var emgPoints = new System.Collections.Generic.List<Point>();
-                    foreach (var p in emgCurve.Points)
-                    {
-                        if (p.Location < emgFromLoc || p.Location > emgToLoc) continue;
-                        int px = CUR_POS_X + (int)((p.Location - currentLocation) * pixelsPerMeter);
-                        int py = CURVE_BOTTOM - (int)(p.Speed * pixelsPerKmh);
-                        py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
-                        emgPoints.Add(new Point(px, py));
-                    }
-
-                    if (emgPoints.Count >= 2)
-                    {
-                        if (emgPoints[0].X > CURVE_LEFT)
-                        {
-                            float edgeSpeed = emgCurve.GetSpeedAt(emgFromLoc);
-                            int px = CUR_POS_X + (int)((emgFromLoc - currentLocation) * pixelsPerMeter);
-                            int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
-                            py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
-                            emgPoints.Insert(0, new Point(px, py));
-                        }
-                        if (emgPoints[emgPoints.Count - 1].X < CURVE_RIGHT)
-                        {
-                            float edgeSpeed = emgCurve.GetSpeedAt(emgToLoc);
-                            int px = CUR_POS_X + (int)((emgToLoc - currentLocation) * pixelsPerMeter);
-                            int py = CURVE_BOTTOM - (int)(edgeSpeed * pixelsPerKmh);
-                            py = Math.Max(CURVE_TOP, Math.Min(CURVE_BOTTOM, py));
-                            emgPoints.Add(new Point(px, py));
-                        }
-
-                        g.DrawLines(emergencyCurvePen, emgPoints.ToArray());
-                    }
-                }
+                SpeedCurve curEmg = AtsMain.modeController.EmergencyBrakeCurve;
+                DrawSingleCurve(g, curEmg, emergencyCurvePen,
+                    currentLocation, currentLocation, toLoc, pixelsPerMeter, pixelsPerKmh);
             }
 
             if (!AtsMain.modeController.IsReversing)

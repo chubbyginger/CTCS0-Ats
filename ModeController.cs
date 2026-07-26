@@ -20,6 +20,7 @@ namespace CTCS0_Ats
         internal SpeedCurve ServiceBrakeCurve;
         internal SpeedCurve EmergencyBrakeCurve;
         internal SpeedTrailBuffer speedTrail;
+        internal BrakeCurveTrailBuffer brakeTrail;
 
         private int prevTime;
 
@@ -30,6 +31,7 @@ namespace CTCS0_Ats
             LastBrakeAction = BrakeAction.None;
             prevTime = 0;
             speedTrail = new SpeedTrailBuffer();
+            brakeTrail = new BrakeCurveTrailBuffer();
         }
 
         internal void Initialize()
@@ -91,12 +93,19 @@ namespace CTCS0_Ats
             EmergencyBrakeCurve = CurrentMode.EmergencyBrakeCurve;
 
             speedTrail.Record((float)state.Location, state.Speed, IsReversing);
+            brakeTrail.Record((float)state.Location, CurrentServiceBrakeSpeed, CurrentEmergencySpeed, IsReversing);
 
             return LastBrakeAction;
         }
 
         internal void OnSignalChange(CabSignal.CabSignalCode signal)
         {
+            brakeTrail.ForceRecord(
+                (float)AtsMain.vehicleState.Location,
+                CurrentServiceBrakeSpeed,
+                CurrentEmergencySpeed);
+            brakeTrail.ForceNext();
+
             CurrentMode.OnSignalChange(signal);
         }
 
