@@ -75,5 +75,7 @@ namespace CTCS0_Ats
         public float AntiSlipCountdown => antiSlip.AlarmCountdown;
         public SpeedCurve ServiceBrakeCurve => supervisor.ServiceBrakeCurve;
         public SpeedCurve EmergencyBrakeCurve => supervisor.EmergencyBrakeCurve;
+        public SpeedCurve LimitCurve => supervisor.LimitCurve;
+        public float ServiceBrakeOffset => supervisor.Thresholds.ServiceBrakeOffset;
     }
 }

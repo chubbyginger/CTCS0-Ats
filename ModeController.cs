@@ -19,6 +19,8 @@ namespace CTCS0_Ats
         internal float AntiSlipCountdown;
         internal SpeedCurve ServiceBrakeCurve;
         internal SpeedCurve EmergencyBrakeCurve;
+        internal SpeedCurve LimitCurve;
+        internal float ServiceBrakeOffset;
         internal SpeedTrailBuffer speedTrail;
         internal BrakeCurveTrailBuffer brakeTrail;
 
@@ -96,6 +98,8 @@ namespace CTCS0_Ats
             AntiSlipCountdown = CurrentMode.AntiSlipCountdown;
             ServiceBrakeCurve = CurrentMode.ServiceBrakeCurve;
             EmergencyBrakeCurve = CurrentMode.EmergencyBrakeCurve;
+            LimitCurve = CurrentMode.LimitCurve;
+            ServiceBrakeOffset = CurrentMode.ServiceBrakeOffset;
 
             speedTrail.Record((float)state.Location, state.Speed, IsReversing);
             brakeTrail.Record((float)state.Location, CurrentServiceBrakeSpeed, CurrentEmergencySpeed, IsReversing);

@@ -4,16 +4,27 @@ using Zbx1425.DXDynamicTexture;
 
 namespace CTCS0_Ats
 {
+    internal struct TargetControlPointAnnotation
+    {
+        internal int X;
+        internal int Y;
+        internal int Speed;
+    }
+
     internal class DMI
     {
         /// <summary>
         /// 帧计数器，用于实现闪烁效果
         /// </summary>
-        public static int frameCounter;
+        private static int frameCounter;
         /// <summary>
-        /// DMI机车信号闪烁用的，
+        /// DMI机车信号闪烁用
         /// </summary>
-        public static int previousBlinkState;
+        private static int previousBlinkState;
+        /// <summary>
+        /// DMI上目标控制点绘制用
+        /// </summary>
+        private static TargetControlPointAnnotation[] TargetControlPointAnnotations;
 
         /// <summary>
         /// 被替换纹理的handle
@@ -24,7 +35,6 @@ namespace CTCS0_Ats
         private static Bitmap baseBitmap;
         private static Bitmap currentSpeedDigitBitmap, limitSpeedDigitBitmap, targetDistanceDigitBitmap, nullDigitBigBitmap, targetDistanceNullBitmap;
         private static Bitmap dateDigitBitmap, timeDigitBitmap;
-        // DL_DMU: 内燃机车、内燃动车组，自空制动机。DMU_Straight：内燃动车组直通制动机。EL：电力机车自空制动机。EMU：电动车组直通制动机。
         private static Bitmap DL_DMU_StatusWindowBitmap, DMU_StraightStatusWindowBitmap, EL_StatusWindowBitmap, EMU_StatusWindowBitmap;
         private static Bitmap statusWhiteDigitBitmap, statusGreenDigitBitmap, statusGreyDigitBitmap, statusNullDigitBitmap;
         private static Bitmap reverserBitmap, notchZeroBitmap, tractionBrakeBitmap;
@@ -37,7 +47,8 @@ namespace CTCS0_Ats
         private static Bitmap downgradeBitmap, shuntingBitmap, departBitmap, restrictedModeBitmap;
         private static Bitmap reverseWarningBitmap;
         private static Bitmap runawayProtectionCountdownBitmap;
-        private static Bitmap releaseAntiSlipCountdownBitmap;
+        private static Bitmap patternTargetSpeedDigits, patternTargetSpeedNullDigits;
+        private static Bitmap speedAxisBitmap;
 
         private static Pen brakeCurvePen;
         private static Pen emergencyCurvePen;
@@ -104,7 +115,9 @@ namespace CTCS0_Ats
                 restrictedModeBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/restricted_mode.png"));
                 reverseWarningBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/reverse_warning.png"));
                 runawayProtectionCountdownBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/runaway_countdown_window.png"));
-                releaseAntiSlipCountdownBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/release_antislip_countdown_window.png"));
+                patternTargetSpeedDigits = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/pattern_speed_digits.png"));
+                patternTargetSpeedNullDigits = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/pattern_null_digits.png"));
+                speedAxisBitmap = new Bitmap(Bitmap.FromFile(AtsMain.dllParentPath + "/assets/speed_axis.png"));
             }
             catch (Exception ex)
             {
@@ -260,7 +273,7 @@ namespace CTCS0_Ats
             DrawTrainPhysics(state);
         }
 
-        internal static void DrawRightStatusBar()
+        private static void DrawRightStatusBar()
         {
             switch (Config.PassengerFreight)
             {
@@ -276,7 +289,7 @@ namespace CTCS0_Ats
             }
         }
 
-        internal static void DrawCabSignal(CabSignal.CabSignalCode signal)
+        private static void DrawCabSignal(CabSignal.CabSignalCode signal)
         {
             if (signal == CabSignal.CabSignalCode.UUS)
             {
@@ -346,7 +359,7 @@ namespace CTCS0_Ats
             }
         }
 
-        internal static void DrawInterventionStatus(BrakeAction action, OperationMode mode)
+        private static void DrawInterventionStatus(BrakeAction action, OperationMode mode)
         {
             if ((action & BrakeAction.Emergency) != 0)
             {
@@ -362,7 +375,7 @@ namespace CTCS0_Ats
             }
         }
 
-        internal static void DrawOperationMode(OperationMode mode)
+        private static void DrawOperationMode(OperationMode mode)
         {
             switch (mode)
             {
@@ -379,12 +392,12 @@ namespace CTCS0_Ats
             }
         }
 
-        internal static void DrawReverseControl()
+        private static void DrawReverseControl()
         {
             bitmapGDI.DrawImage(reverseWarningBitmap, 250, 158);
         }
 
-        internal static void DrawAntiSlipStatus(AntiSlipType type, float countdown)
+        private static void DrawAntiSlipStatus(AntiSlipType type, float countdown)
         {
             bitmapGDI.DrawImage(runawayProtectionCountdownBitmap, 276, 241, ((int)type - 1) * 120, 120);
             DrawMonospaceNumber((int)Math.Floor(countdown), 2, limitSpeedDigitBitmap, nullDigitBigBitmap, 401, 302, 29, 51);
@@ -526,6 +539,96 @@ namespace CTCS0_Ats
             }
 
             g.ResetClip();
+
+            ComputeTargetControlPointAnnotations(
+                currentLocation, fromLoc, toLoc,
+                pixelsPerMeter, pixelsPerKmh,
+                CUR_POS_X, CURVE_TOP, CURVE_BOTTOM);
+        }
+
+        private static void ComputeTargetControlPointAnnotations(
+            float currentLocation, float fromLoc, float toLoc,
+            float pixelsPerMeter, float pixelsPerKmh,
+            int curPosX, int curveTop, int curveBottom)
+        {
+            const int X_OFFSET = 30;
+            const int Y_OFFSET = -20;
+            var annotations = new System.Collections.Generic.List<TargetControlPointAnnotation>();
+
+            SpeedCurve limitCurve = AtsMain.modeController.LimitCurve;
+            SpeedCurve serviceBrakeCurve = AtsMain.modeController.ServiceBrakeCurve
+                ?? AtsMain.modeController.EmergencyBrakeCurve;
+            float sbOffset = AtsMain.modeController.ServiceBrakeOffset;
+
+            if (limitCurve == null || limitCurve.Points.Count < 2 || serviceBrakeCurve == null)
+            {
+                TargetControlPointAnnotations = annotations.ToArray();
+                return;
+            }
+
+            for (int i = 0; i < limitCurve.Points.Count - 1; i++)
+            {
+                if (limitCurve.Points[i + 1].Speed >= limitCurve.Points[i].Speed - 0.5f) continue;
+
+                float targetLoc = limitCurve.Points[i + 1].Location;
+                if (targetLoc < fromLoc || targetLoc > toLoc) continue;
+                if (targetLoc <= currentLocation) continue;
+
+                float targetLimitSpeed = limitCurve.Points[i + 1].Speed;
+                float sbSpeed = targetLimitSpeed + sbOffset;
+
+                int px = curPosX + (int)((targetLoc - currentLocation) * pixelsPerMeter);
+                int py = curveBottom - (int)(sbSpeed * pixelsPerKmh);
+                py = Math.Max(curveTop, Math.Min(curveBottom, py));
+
+                annotations.Add(new TargetControlPointAnnotation
+                {
+                    X = px + X_OFFSET,
+                    Y = py + Y_OFFSET,
+                    Speed = (int)Math.Round(sbSpeed)
+                });
+            }
+
+            TargetControlPointAnnotations = annotations.ToArray();
+        }
+
+        private static void DrawTargetPoint()
+        {
+            foreach (var i in TargetControlPointAnnotations)
+            {
+                DrawMonospaceNumber(i.Speed, 3, patternTargetSpeedDigits, patternTargetSpeedNullDigits, i.X, i.Y, 11, 17);
+            }
+        }
+
+        private static void DrawAxisNumber()
+        {
+            switch (Config.CurveSpeedScale)
+            {
+                case 80:
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 364, 17, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 290, 68, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 216, 102, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 142, 136, 17);
+                    break;
+                case 120:
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 364, 34, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 290, 102, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 216, 170, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 142, 204, 17);
+                    break;
+                case 140:
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 364, 51, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 290, 119, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 216, 187, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 142, 221, 17);
+                    break;
+                case 160:
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 364, 68, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 290, 136, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 216, 204, 17);
+                    bitmapGDI.DrawImage(speedAxisBitmap, 4, 142, 238, 17);
+                    break;
+            }
         }
 
         internal static void Frame(AtsMain.AtsVehicleState state, CabSignal.CabSignalCode signal)
@@ -536,11 +639,17 @@ namespace CTCS0_Ats
                 bitmapGDI.BeginGDI();
                 DrawBase();
                 DrawTopBar(state);
-                DrawVehicleStatus(state);
                 DrawRightStatusBar();
                 DrawCabSignal(Config.ForceCabSignal >= 0 ? (CabSignal.CabSignalCode)Config.ForceCabSignal : signal);
                 DrawInterventionStatus(AtsMain.modeController.LastBrakeAction, AtsMain.modeController.CurrentModeType);
                 DrawOperationMode(AtsMain.modeController.CurrentModeType);
+                DrawAxisNumber();
+                bitmapGDI.EndGDI();
+
+                DrawBrakeCurve();
+
+                bitmapGDI.BeginGDI();
+                DrawTargetPoint();
                 if (AtsMain.modeController.IsReversing)
                 {
                     DrawReverseControl();
@@ -549,8 +658,8 @@ namespace CTCS0_Ats
                 {
                     DrawAntiSlipStatus(AtsMain.modeController.ActiveAntiSlipType, AtsMain.modeController.AntiSlipCountdown);
                 }
+                DrawVehicleStatus(state);
                 bitmapGDI.EndGDI();
-                DrawBrakeCurve();
                 tHandle.Update(bitmapGDI);
             }
         }

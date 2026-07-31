@@ -28,5 +28,7 @@ namespace CTCS0_Ats
         float AntiSlipCountdown { get; }
         SpeedCurve ServiceBrakeCurve { get; }
         SpeedCurve EmergencyBrakeCurve { get; }
+        SpeedCurve LimitCurve { get; }
+        float ServiceBrakeOffset { get; }
     }
 }
