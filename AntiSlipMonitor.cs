@@ -70,15 +70,18 @@ namespace CTCS0_Ats
             bool isStopped = absSpeed < 0.5f;
             float currentLocation = (float)state.Location;
 
-            if (isStopped && !wasStopped)
+            if (isStopped && (!wasStopped || !hadStopped))
             {
+                if (!wasStopped)
+                {
+                    pipeDelayTimer = 0;
+                    pipeCheckDone = false;
+                    releaseArmed = false;
+                    releaseDelayTimer = 0;
+                    hadTractionSinceDeparture = false;
+                }
                 stopLocation = currentLocation;
                 hadStopped = true;
-                pipeDelayTimer = 0;
-                pipeCheckDone = false;
-                releaseArmed = false;
-                releaseDelayTimer = 0;
-                hadTractionSinceDeparture = false;
             }
 
             if (!isStopped && AtsMain.userPowerPosition > 0)
@@ -93,10 +96,19 @@ namespace CTCS0_Ats
 
             BrakeAction action = BrakeAction.None;
 
+            AntiSlipType prevActiveType = activeType;
+
             action |= EvaluatePipePressure(state, deltaTime, isStopped);
             action |= EvaluateRelease(state, deltaTime, isStopped);
             action |= EvaluateHandle(state, deltaTime, isStopped, absSpeed, currentLocation);
             action |= EvaluatePhase(state, deltaTime, isStopped, absSpeed, currentLocation);
+
+            if (prevActiveType != AntiSlipType.None
+                && activeType != AntiSlipType.None
+                && activeType != prevActiveType)
+            {
+                activeType = prevActiveType;
+            }
 
             wasStopped = isStopped;
             return action;
@@ -316,7 +328,14 @@ namespace CTCS0_Ats
 
             if (!hadStopped) return BrakeAction.None;
 
-            bool isReverse = state.Speed < 0;
+            bool isReverse;
+            if (AtsMain.userReverserPosition > 0)
+                isReverse = state.Speed < 0;
+            else if (AtsMain.userReverserPosition < 0)
+                isReverse = state.Speed > 0;
+            else
+                isReverse = state.Speed < 0;
+
             if (!isReverse)
             {
                 if (activeType == AntiSlipType.Phase)
@@ -327,14 +346,6 @@ namespace CTCS0_Ats
             }
 
             float moveDist = Math.Abs(currentLocation - stopLocation);
-
-            if (absSpeed >= PHASE_HIGH_SPEED)
-            {
-                if (activeType == AntiSlipType.Phase)
-                {
-                    return BrakeAction.Warning;
-                }
-            }
 
             if (absSpeed >= HANDLE_SPEED_THRESHOLD || moveDist >= HANDLE_DIST_THRESHOLD)
             {
