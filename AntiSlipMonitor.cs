@@ -36,6 +36,7 @@ namespace CTCS0_Ats
         private float releaseDelayTimer;
 
         private bool hadTractionSinceDeparture;
+        private bool suppressUntilDeparture;
 
         internal AntiSlipType ActiveType => activeType;
         internal bool IsAlarming => activeType != AntiSlipType.None;
@@ -70,7 +71,13 @@ namespace CTCS0_Ats
             bool isStopped = absSpeed < 0.5f;
             float currentLocation = (float)state.Location;
 
-            if (isStopped && (!wasStopped || !hadStopped))
+            if (!isStopped && AtsMain.userPowerPosition > 0)
+            {
+                hadTractionSinceDeparture = true;
+                suppressUntilDeparture = false;
+            }
+
+            if (isStopped && (!wasStopped || !hadStopped) && !suppressUntilDeparture)
             {
                 if (!wasStopped)
                 {
@@ -82,11 +89,6 @@ namespace CTCS0_Ats
                 }
                 stopLocation = currentLocation;
                 hadStopped = true;
-            }
-
-            if (!isStopped && AtsMain.userPowerPosition > 0)
-            {
-                hadTractionSinceDeparture = true;
             }
 
             if (emergencyLatched)
@@ -126,6 +128,8 @@ namespace CTCS0_Ats
                     alarmTimer = 0;
                     releaseArmed = false;
                     releaseDelayTimer = 0;
+                    hadStopped = false;
+                    suppressUntilDeparture = true;
                     Tool.DebugWriteLine("防溜: 紧急制动撤除");
                 }
                 return;
