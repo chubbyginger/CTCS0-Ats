@@ -121,6 +121,9 @@
       <Visible>false</Visible>
       <Wz>1</Wz>
     </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.4</Version>
+    </PackageReference>
     <PackageReference Include="System.Drawing.Common">
       <Version>10.0.9</Version>
     </PackageReference>
