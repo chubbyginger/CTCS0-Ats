@@ -283,9 +283,6 @@ namespace CTCS0_Ats
                 case Config.PassengerFreightEnum.Freight:
                     bitmapGDI.DrawImage(passengerFreightBitmap, 754, 330, 24, 24);
                     break;
-                default:
-                    Tool.DebugWriteLine("客货状态是无效的");
-                    break;
             }
         }
 
@@ -359,7 +356,7 @@ namespace CTCS0_Ats
             }
         }
 
-        private static void DrawInterventionStatus(BrakeAction action, OperationMode mode)
+        private static void DrawInterventionStatus(BrakeAction action)
         {
             if ((action & BrakeAction.Emergency) != 0)
             {
@@ -640,8 +637,8 @@ namespace CTCS0_Ats
                 DrawBase();
                 DrawTopBar(state);
                 DrawRightStatusBar();
-                DrawCabSignal(Config.ForceCabSignal >= 0 ? (CabSignal.CabSignalCode)Config.ForceCabSignal : signal);
-                DrawInterventionStatus(AtsMain.modeController.LastBrakeAction, AtsMain.modeController.CurrentModeType);
+                DrawCabSignal(signal);
+                DrawInterventionStatus(AtsMain.modeController.LastBrakeAction);
                 DrawOperationMode(AtsMain.modeController.CurrentModeType);
                 DrawAxisNumber();
                 bitmapGDI.EndGDI();

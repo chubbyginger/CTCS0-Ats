@@ -47,9 +47,9 @@ namespace CTCS0_Ats
         /// </summary>
         internal static bool DoorInterlockIso = false;
         /// <summary>
-        /// 强制机车信号显示，-1表示不强制（使用实际信号），0~14对应CabSignalCode枚举值
+        /// 强制机车信号显示，-1表示不强制（使用实际信号），0~14对应CabSignalCode枚举值。已经弃用
         /// </summary>
-        internal static int ForceCabSignal = -1;
+        //internal static int ForceCabSignal = -1;
         /// <summary>
         /// 列车标定常用制动减速度 (km/h/s)
         /// </summary>
@@ -65,6 +65,7 @@ namespace CTCS0_Ats
         internal static float SafetyDistanceBaseServiceSection = 100f;
         internal static float SafetyDistanceBaseEmergencySection = 70f;
         internal static bool ShowEmergencyBrakeCurve = false;
+        internal static string TrackDataDir = "";
 
         internal static void Load()
         {
@@ -95,7 +96,7 @@ namespace CTCS0_Ats
                         case "BrakeType": BrakeType = (BrakeTypeEnum)int.Parse(val); break;
                         case "PassengerFreight": PassengerFreight = (PassengerFreightEnum)int.Parse(val); break;
                         case "DoorInterlockIso": DoorInterlockIso = bool.Parse(val); break;
-                        case "ForceCabSignal": ForceCabSignal = int.Parse(val); break;
+                        //case "ForceCabSignal": ForceCabSignal = int.Parse(val); break;
                         case "ServiceBrakeDeceleration": ServiceBrakeDeceleration = float.Parse(val); break;
                         case "EmergencyBrakeDeceleration": EmergencyBrakeDeceleration = float.Parse(val); break;
                         case "EmptyRunTime": EmptyRunTime = float.Parse(val); break;
@@ -108,6 +109,7 @@ namespace CTCS0_Ats
                         case "SafetyDistanceBaseServiceSection": SafetyDistanceBaseServiceSection = float.Parse(val); break;
                         case "SafetyDistanceBaseEmergencySection": SafetyDistanceBaseEmergencySection = float.Parse(val); break;
                         case "ShowEmergencyBrakeCurve": ShowEmergencyBrakeCurve = bool.Parse(val); break;
+                        case "TrackDataDir": TrackDataDir = val; break;
                     }
                 }
                 Tool.DebugWriteLine("config.ini加载完成");

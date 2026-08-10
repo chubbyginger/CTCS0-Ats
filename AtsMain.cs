@@ -17,6 +17,7 @@ namespace CTCS0_Ats
         public static string dllParentPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
         internal static ModeController modeController;
+        internal static TrackDatabase trackDatabase;
 
         [DllExport(CallingConvention.StdCall)]
         public static void Dispose()
@@ -28,15 +29,25 @@ namespace CTCS0_Ats
         public static void SetSignal(int signalIndex)
         {
             CabSignal.DecodeSignal(signalIndex);
-            if (modeController != null)
-            {
-                modeController.OnSignalChange(CabSignal.currentSignal);
-            }
+            modeController?.OnSignalChange(CabSignal.currentSignal);
         }
 
         [DllExport(CallingConvention.StdCall)]
         public static void SetBeaconData(AtsBeaconData beaconData)
         {
+            if (beaconData.Type == 12300)
+            {
+                CabSignal.SetForceNoCode(true);
+            }
+            else if (beaconData.Type == 12301)
+            {
+                CabSignal.SetForceNoCode(false);
+            }
+
+            if (trackDatabase != null && trackDatabase.IsLoaded)
+            {
+                trackDatabase.OnBeacon(beaconData.Type, beaconData.Signal);
+            }
         }
 
         [DllExport(CallingConvention.StdCall)]
@@ -63,10 +74,7 @@ namespace CTCS0_Ats
             var panelArray = new AtsIoArray(panel);
             var soundArray = new AtsIoArray(sound);
 
-            if (modeController != null)
-            {
-                modeController.Update(vehicleState);
-            }
+            modeController?.Update(vehicleState);
 
             DMI.Frame(vehicleState, CabSignal.currentSignal);
 

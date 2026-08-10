@@ -77,9 +77,9 @@ namespace CTCS0_Ats
                     hasStopSignalLocation = IsStopSignal(CabSignal.currentSignal);
                     currentSignal = CabSignal.currentSignal;
                     limitCurveDirty = true;
-                    Tool.DebugWriteLine(string.Format(
-                        "降级模式: 信号稳定, Location={0}, Signal={1}",
-                        entryLocation, currentSignal.ToString()));
+                    //Tool.DebugWriteLine(string.Format(
+                    //    "降级模式: 信号稳定, Location={0}, Signal={1}",
+                    //    entryLocation, currentSignal.ToString()));
                 }
                 else
                 {
@@ -102,9 +102,9 @@ namespace CTCS0_Ats
             float reverseDistance = maxForwardLocation - currentLocation;
             if (reverseDistance > 20f)
             {
-                Tool.DebugWriteLine(string.Format(
-                    "降级模式: 退行{0:F1}m超过20m, 转入限速模式",
-                    reverseDistance));
+                //Tool.DebugWriteLine(string.Format(
+                //    "降级模式: 退行{0:F1}m超过20m, 转入限速模式",
+                //    reverseDistance));
                 AtsMain.modeController.SwitchMode(OperationMode.Restricted);
                 return BrakeAction.None;
             }
