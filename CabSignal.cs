@@ -1,12 +1,9 @@
-﻿using System;
+using System;
 
 namespace CTCS0_Ats
 {
     internal class CabSignal
     {
-        /// <summary>
-        /// 机车信号码定义
-        /// </summary>
         internal enum CabSignalCode
         {
             HU = 0,
@@ -25,14 +22,19 @@ namespace CTCS0_Ats
             U2S,
             B
         }
-        /// <summary>
-        /// 当前机车信号码（全局）
-        /// </summary>
+
         internal static CabSignalCode currentSignal;
+
+        internal static bool forceNoCode;
 
         internal static void DecodeSignal(int signalIndex)
         {
-            Tool.DebugWriteLine("SetSignal接收: signalIndex=" + signalIndex);
+            if (forceNoCode)
+            {
+                currentSignal = CabSignalCode.B;
+                return;
+            }
+
             if (Enum.IsDefined(typeof(CabSignalCode), signalIndex))
             {
                 currentSignal = (CabSignalCode)signalIndex;
@@ -41,7 +43,19 @@ namespace CTCS0_Ats
             {
                 currentSignal = CabSignalCode.B;
             }
-            Tool.DebugWriteLine("机车信号解码: " + currentSignal.ToString());
+        }
+
+        internal static void SetForceNoCode(bool enabled)
+        {
+            forceNoCode = enabled;
+            if (enabled)
+            {
+                currentSignal = CabSignalCode.B;
+                if (AtsMain.modeController != null)
+                {
+                    AtsMain.modeController.OnSignalChange(CabSignalCode.B);
+                }
+            }
         }
     }
 }
